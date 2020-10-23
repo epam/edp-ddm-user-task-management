@@ -1,0 +1,18 @@
+[
+  {
+    "id": "task1",
+    "assignee" : "testuser",
+    "processDefinitionId": "pdId1",
+    "processDefinitionName": "testName",
+    "suspended": false,
+    "businessKey": "businessKey"
+  },
+  {
+    "id": "task2",
+    "assignee" : "testuser",
+    "processDefinitionId": "pdId2",
+    "processDefinitionName": "testName",
+    "suspended": true,
+    "businessKey": null
+  }
+]
