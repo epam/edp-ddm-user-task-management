@@ -1,0 +1,22 @@
+image:
+  name: user-task-management
+  version: latest
+port: 8080
+service:
+  type: ClusterIP
+  port: 8080
+replicas: 1
+appConfigMountPath: "/app/config"
+cephSecretMountPath: "/app/secrets/ceph"
+prometheusScrapePath: "/actuator/prometheus"
+readinessPath: "/user-task-management/actuator/health/readiness"
+livenessPath: "/user-task-management/actuator/health/liveness"
+
+ingress: # expose the service with a route or an ingress depending on platform type
+  platform: openshift # openshift or kubernetes
+
+ceph:
+  bucketName: lowcode-form-data-storage
+
+monitoring:
+  namespace: openshift-monitoring
