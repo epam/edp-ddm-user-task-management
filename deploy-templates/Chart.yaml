@@ -1,0 +1,6 @@
+apiVersion: v2
+description: Chart for deployng user-task-management
+maintainers:
+- email: dmytro_zinchenko1@epam.com
+name: user-task-management
+version: 0.0.1
