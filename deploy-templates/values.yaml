@@ -8,9 +8,13 @@ service:
 replicas: 1
 appConfigMountPath: "/app/config"
 cephSecretMountPath: "/app/secrets/ceph"
-prometheusScrapePath: "/actuator/prometheus"
 readinessPath: "/user-task-management/actuator/health/readiness"
 livenessPath: "/user-task-management/actuator/health/liveness"
+
+prometheus:
+  endpoints:
+    - scrapePath: "/user-task-management/actuator/prometheus"
+      port: "{{ .Values.service.port }}"
 
 ingress: # expose the service with a route or an ingress depending on platform type
   platform: openshift # openshift or kubernetes
