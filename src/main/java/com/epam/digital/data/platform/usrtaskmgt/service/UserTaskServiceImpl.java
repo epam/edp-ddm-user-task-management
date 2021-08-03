@@ -12,7 +12,7 @@ import com.epam.digital.data.platform.dso.api.dto.VerificationRequestDto;
 import com.epam.digital.data.platform.dso.api.dto.VerifySubjectRequestDto;
 import com.epam.digital.data.platform.dso.client.DigitalSignatureRestClient;
 import com.epam.digital.data.platform.integration.ceph.dto.FormDataDto;
-import com.epam.digital.data.platform.integration.ceph.exception.CephCommuncationException;
+import com.epam.digital.data.platform.integration.ceph.exception.CephCommunicationException;
 import com.epam.digital.data.platform.integration.ceph.service.FormDataCephService;
 import com.epam.digital.data.platform.starter.errorhandling.exception.ValidationException;
 import com.epam.digital.data.platform.starter.validation.service.FormValidationService;
@@ -229,7 +229,7 @@ public class UserTaskServiceImpl implements UserTaskService {
   private void putStringFormDataToCeph(String secureSysVarRefTaskFormData, FormDataDto formData) {
     try {
       cephService.putFormData(secureSysVarRefTaskFormData, formData);
-    } catch (CephCommuncationException ex) {
+    } catch (CephCommunicationException ex) {
       log.warn("Couldn't put form data to ceph", ex);
       throw ex;
     }
@@ -238,7 +238,7 @@ public class UserTaskServiceImpl implements UserTaskService {
   private Optional<FormDataDto> getStringFormDataFromCeph(String secureSysVarRefTaskFormData) {
     try {
       return cephService.getFormData(secureSysVarRefTaskFormData);
-    } catch (CephCommuncationException ex) {
+    } catch (CephCommunicationException ex) {
       log.warn("Couldn't get form data from ceph", ex);
       return Optional.empty();
     }
