@@ -503,4 +503,14 @@ public class UserTaskControllerIT extends BaseIT {
     assertThat(response.getMessage()).isEqualTo("not found");
     assertThat(response.getLocalizedMessage()).isEqualTo("Задача не існує або вже виконана");
   }
+
+  @Test
+  public void shouldReturnBadRequestWithBrokenInputJson() throws Exception {
+    MockHttpServletRequestBuilder request = post("/api/task/{taskId}/complete",
+        "taskId", testTaskId)
+        .contentType(MediaType.APPLICATION_JSON)
+        .content("{\"data\" : { \"}}");
+
+    performWithTokenOfficerRole(request).andExpect(status().is(400));
+  }
 }
