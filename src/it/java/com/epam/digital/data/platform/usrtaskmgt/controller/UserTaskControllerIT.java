@@ -183,6 +183,7 @@ public class UserTaskControllerIT extends BaseIT {
 
     mockTaskByParams(testTaskId, processDefinitionId1, processInstanceId, taskDefinitionKey);
     mockPutCephContent(cephKey, payload);
+    mockGetForm();
 
     MockHttpServletRequestBuilder request = post("/api/task/" + testTaskId + "/complete")
         .accept(MediaType.APPLICATION_JSON_VALUE).contentType("application/json")
@@ -202,6 +203,7 @@ public class UserTaskControllerIT extends BaseIT {
     mockTaskByParams(testTaskId, processDefinitionId1, processInstanceId, taskDefinitionKey);
     mockPutCephContent(cephKey, payload);
     mockValidationFormData(payload);
+    mockGetForm();
 
     var verifyResponseDto = new VerificationResponseDto();
     verifyResponseDto.setValid(true);
@@ -223,6 +225,7 @@ public class UserTaskControllerIT extends BaseIT {
 
     mockTaskByParams(testTaskId, processDefinitionId1, processInstanceId, taskDefinitionKey);
     mockPutCephContent(cephKey, payload);
+    mockGetForm();
 
     var verifyResponseDto = new VerificationResponseDto();
     verifyResponseDto.setValid(false);
@@ -253,6 +256,7 @@ public class UserTaskControllerIT extends BaseIT {
     mockTaskByParams(testTaskId, processDefinitionId1, processInstanceId, taskDefinitionKey);
     mockPutCephContent(cephKey, payload);
     mockValidationFormData(payload);
+    mockGetForm();
 
     var verifyResponseDto = new VerifySubjectResponseDto();
     verifyResponseDto.setValid(true);
@@ -277,6 +281,7 @@ public class UserTaskControllerIT extends BaseIT {
     mockTaskByParams(testTaskId, processDefinitionId1, processInstanceId, taskDefinitionKey);
     mockPutCephContent(cephKey, payload);
     mockValidationFormData(payload);
+    mockGetForm();
 
     var properties = new HashMap<>();
     properties.put("eSign", "true");
@@ -320,6 +325,7 @@ public class UserTaskControllerIT extends BaseIT {
 
     mockTaskByParams(testTaskId, processDefinitionId1, processInstanceId, taskDefinitionKey);
     mockPutCephContent(cephKey, payload);
+    mockGetForm();
 
     var verifyResponseDto = new VerifySubjectResponseDto();
     verifyResponseDto.setValid(false);
@@ -361,6 +367,7 @@ public class UserTaskControllerIT extends BaseIT {
     mockTaskByParams(testTaskId, processDefinitionId1, processInstanceId, taskDefinitionKey);
     mockPutCephContent(cephKey, payload);
     mockValidationFormData(payload);
+    mockGetForm();
 
     var errorDto = new ValidationErrorDto();
     errorDto.setDetails(new ErrorsListDto(Lists.newArrayList(new ErrorDetailDto("myMsg",
