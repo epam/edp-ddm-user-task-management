@@ -16,11 +16,13 @@ import com.epam.digital.data.platform.bpms.api.dto.TaskQueryDto;
 import com.epam.digital.data.platform.dso.api.dto.VerificationResponseDto;
 import com.epam.digital.data.platform.dso.api.dto.VerifySubjectResponseDto;
 import com.epam.digital.data.platform.starter.security.jwt.TokenParser;
+import com.epam.digital.data.platform.starter.validation.dto.FormDto;
 import com.epam.digital.data.platform.usrtaskmgt.config.TokenConfig;
 import com.epam.digital.data.platform.usrtaskmgt.dto.TestTaskDto;
 import com.epam.digital.data.platform.usrtaskmgt.util.CephKeyProvider;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.tomakehurst.wiremock.WireMockServer;
+import java.util.ArrayList;
 import java.util.Calendar.Builder;
 import java.util.Collections;
 import java.util.HashMap;
@@ -345,12 +347,24 @@ public abstract class BaseIT {
   public void mockValidationFormData(String reqBody) {
     formProviderServer.addStubMapping(
         stubFor(post(urlPathEqualTo("/testFormKey/submission"))
-            .withRequestBody(equalTo(reqBody))
+            .withRequestBody(equalTo("{\"data\":{}}"))
             .withQueryParam("dryrun", equalTo("1"))
             .willReturn(aResponse()
                 .withHeader("Content-Type", "application/json")
                 .withStatus(200)
                 .withBody(reqBody)
+            )
+        ));
+  }
+
+  @SneakyThrows
+  public void mockGetForm() {
+    formProviderServer.addStubMapping(
+        stubFor(get(urlPathEqualTo("/testFormKey"))
+            .willReturn(aResponse()
+                .withHeader("Content-Type", "application/json")
+                .withStatus(200)
+                .withBody(objectMapper.writeValueAsString(new FormDto(new ArrayList<>())))
             )
         ));
   }
