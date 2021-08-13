@@ -12,6 +12,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.epam.digital.data.platform.bpms.api.dto.SortingDto;
 import com.epam.digital.data.platform.bpms.api.dto.TaskQueryDto;
 import com.epam.digital.data.platform.dso.api.dto.VerificationResponseDto;
 import com.epam.digital.data.platform.dso.api.dto.VerifySubjectResponseDto;
@@ -258,6 +259,7 @@ public abstract class BaseIT {
             .assignee(tokenParser.parseClaims(tokenConfig.getValueWithRoleOfficer()).getPreferredUsername())
             .unassigned(true)
             .build()))
+        .sorting(Lists.newArrayList(SortingDto.builder().build()))
         .build();
     bpmServer.addStubMapping(
         stubFor(post(urlPathEqualTo("/api/task"))

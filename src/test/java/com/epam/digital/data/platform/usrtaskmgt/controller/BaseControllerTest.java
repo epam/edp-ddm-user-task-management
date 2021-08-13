@@ -75,7 +75,7 @@ public abstract class BaseControllerTest {
   }
 
   public void mockGetTasks() {
-    lenient().when(userTaskService.getTasks(null))
+    lenient().when(userTaskService.getTasks(null, null, null,null, null))
         .thenReturn(Lists.newArrayList(new UserTaskDto("testId", "testTaskName", "testAssignee",
                 LocalDateTime.of(LocalDate.of(2020, 12, 12), LocalTime.of(13, 3, 22)), "testDesc",
                 "testProcessDefinitionName", "testProcessInstanceId", "testProcessDefinitionId",
@@ -87,7 +87,7 @@ public abstract class BaseControllerTest {
   }
 
   public void mockGetTasksByProcessInstanceId() {
-    lenient().when(userTaskService.getTasks("testProcessInstanceId"))
+    lenient().when(userTaskService.getTasks("testProcessInstanceId", null, null,null, null))
         .thenReturn(Lists.newArrayList(new UserTaskDto("testId", "testTaskName", "testAssignee",
             LocalDateTime.of(LocalDate.of(2020, 12, 12), LocalTime.of(13, 3, 22)), "testDesc",
             "testProcessDefinitionName", "testProcessInstanceId", "testProcessDefinitionId",

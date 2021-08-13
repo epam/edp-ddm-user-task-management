@@ -37,8 +37,12 @@ public class UserTaskController {
 
   @GetMapping("/task")
   @Operation(summary = "Retrieve all tasks", description = "Returns task list")
-  public List<UserTaskDto> getTasks(@RequestParam(required = false) String processInstanceId) {
-    return userTaskService.getTasks(processInstanceId);
+  public List<UserTaskDto> getTasks(@RequestParam(required = false) String processInstanceId,
+      @RequestParam(required = false) Integer firstResult,
+      @RequestParam(required = false) Integer maxResults,
+      @RequestParam(required = false) String sortBy,
+      @RequestParam(required = false) String sortOrder) {
+    return userTaskService.getTasks(processInstanceId, firstResult, maxResults, sortBy, sortOrder);
   }
 
   @GetMapping("/task/{id}")
