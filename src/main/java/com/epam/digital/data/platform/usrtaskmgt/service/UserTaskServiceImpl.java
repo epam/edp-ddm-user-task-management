@@ -98,8 +98,11 @@ public class UserTaskServiceImpl implements UserTaskService {
   @Override
   public CountResultDto countTasks() {
     var params = TaskCountQueryDto.builder()
-        .assignee(AuthUtil.getCurrentUsername())
-        .unassigned(true)
+        .orQueries(Collections.singletonList(
+            TaskCountQueryDto.builder()
+                .assignee(AuthUtil.getCurrentUsername())
+                .unassigned(true)
+                .build()))
         .build();
     return camundaTaskRestClient.getTaskCountByParams(params);
   }
