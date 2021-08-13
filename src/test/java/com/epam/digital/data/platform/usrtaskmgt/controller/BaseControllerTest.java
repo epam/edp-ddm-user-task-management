@@ -95,7 +95,7 @@ public abstract class BaseControllerTest {
   }
 
   public void mockGetHistoryTasks() {
-    lenient().when(historyUserTaskService.getHistoryTasks())
+    lenient().when(historyUserTaskService.getHistoryTasks(null, null, null, null))
         .thenReturn(
             Lists.newArrayList(new HistoryUserTaskDto("testId", "testTaskName", "testAssignee",
                     LocalDateTime.of(LocalDate.of(2020, 12, 12), LocalTime.of(13, 3, 22)),
