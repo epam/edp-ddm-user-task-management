@@ -1,7 +1,10 @@
 package com.epam.digital.data.platform.usrtaskmgt.service;
 
 import com.epam.digital.data.platform.bpms.api.dto.ClaimTaskDto;
+import com.epam.digital.data.platform.bpms.api.dto.TaskCountQueryDto;
+import com.epam.digital.data.platform.bpms.api.dto.PaginationQueryDto;
 import com.epam.digital.data.platform.bpms.api.dto.ProcessDefinitionQueryDto;
+import com.epam.digital.data.platform.bpms.api.dto.SortingDto;
 import com.epam.digital.data.platform.bpms.api.dto.TaskQueryDto;
 import com.epam.digital.data.platform.bpms.client.CamundaTaskRestClient;
 import com.epam.digital.data.platform.bpms.client.ProcessDefinitionRestClient;
@@ -69,10 +72,19 @@ public class UserTaskServiceImpl implements UserTaskService {
   private final FormValidationService formValidationService;
 
   @Override
-  public List<UserTaskDto> getTasks(String processInstanceId) {
+  public List<UserTaskDto> getTasks(String processInstanceId, Integer firstResult,
+      Integer maxResults, String sortBy, String sortOrder) {
     var taskQueryDto = prepareDefaultSearchTaskQuery();
     taskQueryDto.setProcessInstanceId(processInstanceId);
-    List<TaskDto> tasks = camundaTaskRestClient.getTasksByParams(taskQueryDto);
+    var sortingDto = SortingDto.builder()
+        .sortBy(sortBy)
+        .sortOrder(sortOrder)
+        .build();
+    taskQueryDto.setSorting(List.of(sortingDto));
+    var paginationQueryDto = PaginationQueryDto.builder()
+        .firstResult(firstResult)
+        .maxResults(maxResults).build();
+    List<TaskDto> tasks = camundaTaskRestClient.getTasksByParams(taskQueryDto, paginationQueryDto);
     return postProcess(userTaskDtoMapper.toUserTasks(tasks));
   }
 
@@ -85,7 +97,11 @@ public class UserTaskServiceImpl implements UserTaskService {
 
   @Override
   public CountResultDto countTasks() {
-    return camundaTaskRestClient.getTaskCountByParams(prepareDefaultSearchTaskQuery());
+    var params = TaskCountQueryDto.builder()
+        .assignee(AuthUtil.getCurrentUsername())
+        .unassigned(true)
+        .build();
+    return camundaTaskRestClient.getTaskCountByParams(params);
   }
 
   @Override

@@ -19,9 +19,14 @@ public interface UserTaskService {
    * Method for getting list of user task entities.
    *
    * @param processInstanceId process instance identifier
+   * @param firstResult specifies the index of the first result
+   * @param maxResults specifies the maximum number of results
+   * @param sortBy parameter to sort the results by a given criterion
+   * @param sortOrder parameter to sort the results in a given order
    * @return the list of user tasks
    */
-  List<UserTaskDto> getTasks(String processInstanceId);
+  List<UserTaskDto> getTasks(String processInstanceId, Integer firstResult, Integer maxResults,
+      String sortBy, String sortOrder);
 
   /**
    * Method for getting user task entity that can be signed by id.
