@@ -10,3 +10,6 @@ data:
     spring.zipkin.baseUrl: http://zipkin.istio-system:9411
     form-management-provider.url: http://form-management-provider:3001
     server.max-http-header-size: 32KB
+    {{- if eq .Values.deployProfile "dev" }}
+    management.endpoints.web.exposure.include: '*'
+    {{- end }}
