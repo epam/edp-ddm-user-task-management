@@ -68,7 +68,7 @@ public class RestExceptionHandler {
         messageResolver.getMessage(UserTaskManagementMessage.USER_TASK_NOT_EXISTS, ex.getTaskId());
 
     var systemErrorDto = SystemErrorDto.builder()
-        .traceId(ex.getCause().getTraceId())
+        .traceId(MDC.get(BaseRestExceptionHandler.TRACE_ID_KEY))
         .message(ex.getCause().getMessage())
         .code(ex.getCause().getCode())
         .localizedMessage(localizedMessage)
@@ -108,7 +108,7 @@ public class RestExceptionHandler {
 
     var systemErrorDto =
         SystemErrorDto.builder()
-            .traceId(ex.getCause().getTraceId())
+            .traceId(MDC.get(BaseRestExceptionHandler.TRACE_ID_KEY))
             .message(ex.getCause().getMessage())
             .code(ex.getCause().getCode())
             .localizedMessage(localizedMessage)
