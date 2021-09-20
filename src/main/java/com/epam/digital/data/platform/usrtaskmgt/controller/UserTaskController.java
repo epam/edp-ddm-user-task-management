@@ -6,10 +6,13 @@ import com.epam.digital.data.platform.starter.errorhandling.dto.ValidationErrorD
 import com.epam.digital.data.platform.starter.security.annotation.PreAuthorizeAnySystemRole;
 import com.epam.digital.data.platform.starter.security.annotation.PreAuthorizeCitizen;
 import com.epam.digital.data.platform.starter.security.annotation.PreAuthorizeOfficer;
-import com.epam.digital.data.platform.usrtaskmgt.dto.SignableUserTaskDto;
-import com.epam.digital.data.platform.usrtaskmgt.dto.UserTaskDto;
+import com.epam.digital.data.platform.usrtaskmgt.model.Pageable;
+import com.epam.digital.data.platform.usrtaskmgt.model.SignableUserTaskDto;
+import com.epam.digital.data.platform.usrtaskmgt.model.UserTaskDto;
+import com.epam.digital.data.platform.usrtaskmgt.model.swagger.PageableAsQueryParam;
 import com.epam.digital.data.platform.usrtaskmgt.service.UserTaskService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -37,12 +40,10 @@ public class UserTaskController {
 
   @GetMapping("/task")
   @Operation(summary = "Retrieve all tasks", description = "Returns task list")
+  @PageableAsQueryParam
   public List<UserTaskDto> getTasks(@RequestParam(required = false) String processInstanceId,
-      @RequestParam(required = false) Integer firstResult,
-      @RequestParam(required = false) Integer maxResults,
-      @RequestParam(required = false) String sortBy,
-      @RequestParam(required = false) String sortOrder) {
-    return userTaskService.getTasks(processInstanceId, firstResult, maxResults, sortBy, sortOrder);
+      @Parameter(hidden = true) Pageable pageable) {
+    return userTaskService.getTasks(processInstanceId, pageable);
   }
 
   @GetMapping("/task/{id}")

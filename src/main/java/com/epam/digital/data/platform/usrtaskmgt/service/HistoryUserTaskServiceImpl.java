@@ -1,78 +1,86 @@
 package com.epam.digital.data.platform.usrtaskmgt.service;
 
-import static java.util.Objects.nonNull;
-
 import com.epam.digital.data.platform.bpms.api.dto.HistoryTaskCountQueryDto;
 import com.epam.digital.data.platform.bpms.api.dto.HistoryTaskQueryDto;
-import com.epam.digital.data.platform.bpms.api.dto.ProcessDefinitionQueryDto;
 import com.epam.digital.data.platform.bpms.client.HistoryTaskRestClient;
-import com.epam.digital.data.platform.bpms.client.ProcessDefinitionRestClient;
-import com.epam.digital.data.platform.usrtaskmgt.dto.HistoryUserTaskDto;
 import com.epam.digital.data.platform.usrtaskmgt.mapper.UserTaskDtoMapper;
+import com.epam.digital.data.platform.usrtaskmgt.model.HistoryUserTaskDto;
+import com.epam.digital.data.platform.usrtaskmgt.model.Pageable;
+import com.epam.digital.data.platform.usrtaskmgt.service.internal.ProcessDefinitionService;
 import com.epam.digital.data.platform.usrtaskmgt.util.AuthUtil;
 import java.util.List;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.camunda.bpm.engine.impl.persistence.entity.HistoricTaskInstanceEntity;
 import org.camunda.bpm.engine.rest.dto.CountResultDto;
-import org.camunda.bpm.engine.rest.dto.repository.ProcessDefinitionDto;
 import org.springframework.stereotype.Service;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class HistoryUserTaskServiceImpl implements HistoryUserTaskService {
 
-  private final ProcessDefinitionRestClient processDefinitionRestClient;
   private final HistoryTaskRestClient historyTaskRestClient;
+
+  private final ProcessDefinitionService processDefinitionService;
+
   private final UserTaskDtoMapper userTaskDtoMapper;
 
   @Override
-  public List<HistoryUserTaskDto> getHistoryTasks(Integer firstResult, Integer maxResults, String sortBy,
-      String sortOrder) {
-    List<HistoricTaskInstanceEntity> historyTasksByParams = historyTaskRestClient
-        .getHistoryTasksByParams(
-            HistoryTaskQueryDto.builder()
-                .firstResult(firstResult)
-                .maxResults(maxResults)
-                .sortBy(sortBy)
-                .sortOrder(sortOrder)
-                .taskAssignee(AuthUtil.getCurrentUsername())
-                .finished(true)
-                .build());
-    return postProcess(userTaskDtoMapper.toHistoryUserTasks(historyTasksByParams));
+  public List<HistoryUserTaskDto> getHistoryTasks(Pageable page) {
+    log.info("Getting finished user tasks. Parameters: {}", page);
+
+    var historyTaskQueryDto = buildHistoryTaskQueryDto(page);
+    var historyTasksByParams = historyTaskRestClient.getHistoryTasksByParams(historyTaskQueryDto);
+    log.trace("Found {} history tasks", historyTasksByParams.size());
+    var processDefinitionIds = extractProcessDefinitionIds(historyTasksByParams);
+    log.trace("Found {} process definition ids from task list. Result - {}",
+        processDefinitionIds.size(), processDefinitionIds);
+    var processDefinitionNames = processDefinitionService
+        .getProcessDefinitionNames(processDefinitionIds);
+    log.trace("Found process definition names - {}", processDefinitionNames);
+
+    var result = userTaskDtoMapper.toHistoryUserTasks(historyTasksByParams);
+    result.forEach(task -> task.setProcessDefinitionName(
+        processDefinitionNames.get(task.getProcessDefinitionId())));
+    log.trace("Found user tasks - {}", result);
+
+    log.info("Found {} user tasks. Task ids - {}", result.size(),
+        result.stream().map(HistoryUserTaskDto::getId).collect(Collectors.joining(", ")));
+
+    return result;
   }
 
   @Override
   public CountResultDto countHistoryTasks() {
-    return historyTaskRestClient.getHistoryTaskCountByParams(HistoryTaskCountQueryDto.builder()
+    log.info("Getting count of finished user tasks");
+
+    var result = historyTaskRestClient.getHistoryTaskCountByParams(
+        HistoryTaskCountQueryDto.builder()
+            .taskAssignee(AuthUtil.getCurrentUsername())
+            .finished(true)
+            .build());
+
+    log.info("Count of finished user tasks is found - {}", result.getCount());
+    return result;
+  }
+
+  private HistoryTaskQueryDto buildHistoryTaskQueryDto(Pageable pageable) {
+    return HistoryTaskQueryDto.builder()
+        .firstResult(pageable.getFirstResult())
+        .maxResults(pageable.getMaxResults())
+        .sortBy(pageable.getSortBy())
+        .sortOrder(pageable.getSortOrder())
         .taskAssignee(AuthUtil.getCurrentUsername())
         .finished(true)
-        .build());
-  }
-
-  private List<HistoryUserTaskDto> postProcess(List<HistoryUserTaskDto> historyUserTaskDtos) {
-    fillProcessDefinitionName(historyUserTaskDtos);
-    return historyUserTaskDtos;
-  }
-
-  private void fillProcessDefinitionName(List<HistoryUserTaskDto> historyUserTaskDtos) {
-    var processDefinitionIds = historyUserTaskDtos.stream()
-        .map(HistoryUserTaskDto::getProcessDefinitionId)
-        .distinct().collect(Collectors.toList());
-    var processDefinitionQueryDto = ProcessDefinitionQueryDto.builder()
-        .processDefinitionIdIn(processDefinitionIds)
         .build();
-    var processDefinitions = processDefinitionRestClient
-        .getProcessDefinitionsByParams(processDefinitionQueryDto);
-    var processDefinitionIdAndDtoMap = processDefinitions.stream()
-        .collect(Collectors.toMap(ProcessDefinitionDto::getId, Function.identity()));
-    historyUserTaskDtos.forEach(task -> {
-      var processDefinitionDto = processDefinitionIdAndDtoMap
-          .get(task.getProcessDefinitionId());
-      if (nonNull(processDefinitionDto)) {
-        task.setProcessDefinitionName(processDefinitionDto.getName());
-      }
-    });
+  }
+
+  private List<String> extractProcessDefinitionIds(List<HistoricTaskInstanceEntity> tasks) {
+    return tasks.stream()
+        .map(HistoricTaskInstanceEntity::getProcessDefinitionId)
+        .distinct()
+        .collect(Collectors.toList());
   }
 }

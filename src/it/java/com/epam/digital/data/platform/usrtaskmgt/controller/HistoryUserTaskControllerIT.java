@@ -8,7 +8,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 
 import com.epam.digital.data.platform.usrtaskmgt.BaseIT;
-import com.epam.digital.data.platform.usrtaskmgt.dto.HistoryUserTaskDto;
+import com.epam.digital.data.platform.usrtaskmgt.model.HistoryUserTaskDto;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.Arrays;
 import java.util.List;

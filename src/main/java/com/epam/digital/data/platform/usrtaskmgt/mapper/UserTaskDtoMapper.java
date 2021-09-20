@@ -1,8 +1,8 @@
 package com.epam.digital.data.platform.usrtaskmgt.mapper;
 
-import com.epam.digital.data.platform.usrtaskmgt.dto.HistoryUserTaskDto;
-import com.epam.digital.data.platform.usrtaskmgt.dto.SignableUserTaskDto;
-import com.epam.digital.data.platform.usrtaskmgt.dto.UserTaskDto;
+import com.epam.digital.data.platform.usrtaskmgt.model.HistoryUserTaskDto;
+import com.epam.digital.data.platform.usrtaskmgt.model.SignableUserTaskDto;
+import com.epam.digital.data.platform.usrtaskmgt.model.UserTaskDto;
 import java.util.List;
 import org.camunda.bpm.engine.impl.persistence.entity.HistoricTaskInstanceEntity;
 import org.camunda.bpm.engine.rest.dto.task.TaskDto;

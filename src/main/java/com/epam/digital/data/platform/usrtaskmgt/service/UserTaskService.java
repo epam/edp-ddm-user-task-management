@@ -1,11 +1,12 @@
 package com.epam.digital.data.platform.usrtaskmgt.service;
 
 import com.epam.digital.data.platform.integration.ceph.dto.FormDataDto;
-import com.epam.digital.data.platform.usrtaskmgt.dto.SignableUserTaskDto;
-import com.epam.digital.data.platform.usrtaskmgt.dto.UserTaskDto;
 import com.epam.digital.data.platform.usrtaskmgt.exception.SignatureValidationException;
 import com.epam.digital.data.platform.usrtaskmgt.exception.UserTaskAlreadyAssignedException;
 import com.epam.digital.data.platform.usrtaskmgt.exception.UserTaskNotExistsOrCompletedException;
+import com.epam.digital.data.platform.usrtaskmgt.model.Pageable;
+import com.epam.digital.data.platform.usrtaskmgt.model.SignableUserTaskDto;
+import com.epam.digital.data.platform.usrtaskmgt.model.UserTaskDto;
 import java.util.List;
 import org.camunda.bpm.engine.rest.dto.CountResultDto;
 
@@ -19,14 +20,11 @@ public interface UserTaskService {
    * Method for getting list of user task entities.
    *
    * @param processInstanceId process instance identifier
-   * @param firstResult specifies the index of the first result
-   * @param maxResults specifies the maximum number of results
-   * @param sortBy parameter to sort the results by a given criterion
-   * @param sortOrder parameter to sort the results in a given order
+   * @param page              specifies the index of the first result, the maximum number of results
+   *                          and result sorting criteria and order
    * @return the list of user tasks
    */
-  List<UserTaskDto> getTasks(String processInstanceId, Integer firstResult, Integer maxResults,
-      String sortBy, String sortOrder);
+  List<UserTaskDto> getTasks(String processInstanceId, Pageable page);
 
   /**
    * Method for getting user task entity that can be signed by id.

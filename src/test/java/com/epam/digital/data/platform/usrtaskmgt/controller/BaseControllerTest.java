@@ -8,12 +8,13 @@ import com.epam.digital.data.platform.starter.errorhandling.BaseRestExceptionHan
 import com.epam.digital.data.platform.starter.errorhandling.dto.SystemErrorDto;
 import com.epam.digital.data.platform.starter.localization.MessageResolver;
 import com.epam.digital.data.platform.usrtaskmgt.controller.config.CustomMockMvcConfigurer;
-import com.epam.digital.data.platform.usrtaskmgt.dto.HistoryUserTaskDto;
-import com.epam.digital.data.platform.usrtaskmgt.dto.SignableUserTaskDto;
-import com.epam.digital.data.platform.usrtaskmgt.dto.UserTaskDto;
 import com.epam.digital.data.platform.usrtaskmgt.enums.UserTaskManagementMessage;
 import com.epam.digital.data.platform.usrtaskmgt.exception.UserTaskAlreadyAssignedException;
 import com.epam.digital.data.platform.usrtaskmgt.exception.UserTaskNotExistsOrCompletedException;
+import com.epam.digital.data.platform.usrtaskmgt.model.HistoryUserTaskDto;
+import com.epam.digital.data.platform.usrtaskmgt.model.Pageable;
+import com.epam.digital.data.platform.usrtaskmgt.model.SignableUserTaskDto;
+import com.epam.digital.data.platform.usrtaskmgt.model.UserTaskDto;
 import com.epam.digital.data.platform.usrtaskmgt.service.HistoryUserTaskService;
 import com.epam.digital.data.platform.usrtaskmgt.service.UserTaskService;
 import com.google.common.collect.ImmutableMap;
@@ -75,7 +76,7 @@ public abstract class BaseControllerTest {
   }
 
   public void mockGetTasks() {
-    lenient().when(userTaskService.getTasks(null, null, null,null, null))
+    lenient().when(userTaskService.getTasks(null, Pageable.builder().build()))
         .thenReturn(Lists.newArrayList(new UserTaskDto("testId", "testTaskName", "testAssignee",
                 LocalDateTime.of(LocalDate.of(2020, 12, 12), LocalTime.of(13, 3, 22)), "testDesc",
                 "testProcessDefinitionName", "testProcessInstanceId", "testProcessDefinitionId",
@@ -87,7 +88,7 @@ public abstract class BaseControllerTest {
   }
 
   public void mockGetTasksByProcessInstanceId() {
-    lenient().when(userTaskService.getTasks("testProcessInstanceId", null, null,null, null))
+    lenient().when(userTaskService.getTasks("testProcessInstanceId", Pageable.builder().build()))
         .thenReturn(Lists.newArrayList(new UserTaskDto("testId", "testTaskName", "testAssignee",
             LocalDateTime.of(LocalDate.of(2020, 12, 12), LocalTime.of(13, 3, 22)), "testDesc",
             "testProcessDefinitionName", "testProcessInstanceId", "testProcessDefinitionId",
@@ -95,7 +96,7 @@ public abstract class BaseControllerTest {
   }
 
   public void mockGetHistoryTasks() {
-    lenient().when(historyUserTaskService.getHistoryTasks(null, null, null, null))
+    lenient().when(historyUserTaskService.getHistoryTasks(Pageable.builder().build()))
         .thenReturn(
             Lists.newArrayList(new HistoryUserTaskDto("testId", "testTaskName", "testAssignee",
                     LocalDateTime.of(LocalDate.of(2020, 12, 12), LocalTime.of(13, 3, 22)),

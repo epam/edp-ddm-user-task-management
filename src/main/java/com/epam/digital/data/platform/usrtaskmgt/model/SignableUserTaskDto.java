@@ -1,10 +1,11 @@
-package com.epam.digital.data.platform.usrtaskmgt.dto;
+package com.epam.digital.data.platform.usrtaskmgt.model;
 
 import java.time.LocalDateTime;
 import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 /**
  * The class represents a data transfer object for user task, the difference with {@link
@@ -15,6 +16,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@ToString
 public class SignableUserTaskDto {
 
   private String id;
