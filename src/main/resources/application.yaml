@@ -42,8 +42,8 @@ spring:
       enabled: true
     baggage:
       correlation-enabled: true
-      correlation-fields: x-request-id
-      remote-fields: x-request-id, x-access-token
+      correlation-fields: x-request-id, X-Primary-Request-URL
+      remote-fields: x-request-id, x-access-token, X-Primary-Request-URL
   cloud:
     discovery:
       client:
@@ -54,5 +54,27 @@ springdoc:
   swagger-ui:
     path: "/swagger"
 
+platform:
+  logging:
+    aspect:
+      enabled: false
+    primary-url:
+      enabled: true
+
 ceph:
   bucket: ${CEPH_BUCKET_NAME:bucket}
+
+logbook:
+  feign:
+    enabled: true
+  info-logging:
+    enabled: true
+  strategy: request-body-on-debug
+  exclude:
+    - /user-task-management/v3/api-docs/**
+    - /user-task-management/swagger-ui/**
+    - /user-task-management/actuator/**
+    - /user-task-management/swagger
+  obfuscate:
+    headers:
+      - x-access-token

@@ -1,13 +1,11 @@
 package com.epam.digital.data.platform.usrtaskmgt.service;
 
 import com.epam.digital.data.platform.bpms.api.dto.ClaimTaskDto;
-import com.epam.digital.data.platform.bpms.api.dto.TaskCountQueryDto;
 import com.epam.digital.data.platform.bpms.api.dto.PaginationQueryDto;
-import com.epam.digital.data.platform.bpms.api.dto.ProcessDefinitionQueryDto;
 import com.epam.digital.data.platform.bpms.api.dto.SortingDto;
+import com.epam.digital.data.platform.bpms.api.dto.TaskCountQueryDto;
 import com.epam.digital.data.platform.bpms.api.dto.TaskQueryDto;
 import com.epam.digital.data.platform.bpms.client.CamundaTaskRestClient;
-import com.epam.digital.data.platform.bpms.client.ProcessDefinitionRestClient;
 import com.epam.digital.data.platform.bpms.client.TaskPropertyRestClient;
 import com.epam.digital.data.platform.bpms.client.exception.TaskNotFoundException;
 import com.epam.digital.data.platform.dso.api.dto.Subject;
@@ -19,14 +17,16 @@ import com.epam.digital.data.platform.integration.ceph.exception.CephCommunicati
 import com.epam.digital.data.platform.integration.ceph.service.FormDataCephService;
 import com.epam.digital.data.platform.starter.errorhandling.exception.ValidationException;
 import com.epam.digital.data.platform.starter.validation.service.FormValidationService;
-import com.epam.digital.data.platform.usrtaskmgt.dto.SignableUserTaskDto;
-import com.epam.digital.data.platform.usrtaskmgt.dto.UserTaskDto;
 import com.epam.digital.data.platform.usrtaskmgt.exception.SignatureValidationException;
 import com.epam.digital.data.platform.usrtaskmgt.exception.UserTaskAlreadyAssignedException;
 import com.epam.digital.data.platform.usrtaskmgt.exception.UserTaskAuthorizationException;
 import com.epam.digital.data.platform.usrtaskmgt.exception.UserTaskNotExistsException;
 import com.epam.digital.data.platform.usrtaskmgt.exception.UserTaskNotExistsOrCompletedException;
 import com.epam.digital.data.platform.usrtaskmgt.mapper.UserTaskDtoMapper;
+import com.epam.digital.data.platform.usrtaskmgt.model.Pageable;
+import com.epam.digital.data.platform.usrtaskmgt.model.SignableUserTaskDto;
+import com.epam.digital.data.platform.usrtaskmgt.model.UserTaskDto;
+import com.epam.digital.data.platform.usrtaskmgt.service.internal.ProcessDefinitionService;
 import com.epam.digital.data.platform.usrtaskmgt.util.AuthUtil;
 import com.epam.digital.data.platform.usrtaskmgt.util.CephKeyProvider;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -38,12 +38,11 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.Function;
+import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.camunda.bpm.engine.rest.dto.CountResultDto;
-import org.camunda.bpm.engine.rest.dto.repository.ProcessDefinitionDto;
 import org.camunda.bpm.engine.rest.dto.task.CompleteTaskDto;
 import org.camunda.bpm.engine.rest.dto.task.TaskDto;
 import org.springframework.stereotype.Service;
@@ -59,12 +58,12 @@ public class UserTaskServiceImpl implements UserTaskService {
   private static final String FORM_VARIABLES_PROPERTY = "formVariables";
   private static final String FORM_VARIABLES_REGEX = "\\s*,\\s*";
 
-  private final ProcessDefinitionRestClient processDefinitionRestClient;
   private final CamundaTaskRestClient camundaTaskRestClient;
   private final TaskPropertyRestClient taskPropertyRestClient;
   private final DigitalSignatureRestClient digitalSignatureRestClient;
 
   private final FormDataCephService cephService;
+  private final ProcessDefinitionService processDefinitionService;
 
   private final UserTaskDtoMapper userTaskDtoMapper;
   private final ObjectMapper objectMapper;
@@ -72,72 +71,156 @@ public class UserTaskServiceImpl implements UserTaskService {
   private final FormValidationService formValidationService;
 
   @Override
-  public List<UserTaskDto> getTasks(String processInstanceId, Integer firstResult,
-      Integer maxResults, String sortBy, String sortOrder) {
-    var taskQueryDto = prepareDefaultSearchTaskQuery();
-    taskQueryDto.setProcessInstanceId(processInstanceId);
-    var sortingDto = SortingDto.builder()
-        .sortBy(sortBy)
-        .sortOrder(sortOrder)
-        .build();
-    taskQueryDto.setSorting(List.of(sortingDto));
-    var paginationQueryDto = PaginationQueryDto.builder()
-        .firstResult(firstResult)
-        .maxResults(maxResults).build();
-    List<TaskDto> tasks = camundaTaskRestClient.getTasksByParams(taskQueryDto, paginationQueryDto);
-    return postProcess(userTaskDtoMapper.toUserTasks(tasks));
+  public List<UserTaskDto> getTasks(String processInstanceId, Pageable page) {
+    log.info("Getting unfinished user tasks for process instance {}. Parameters: {}",
+        processInstanceId, page);
+    var tasks = getTaskDtoList(processInstanceId, page);
+    log.trace("Found {} history tasks", tasks.size());
+    var processDefinitionIds = extractProcessDefinitionIds(tasks);
+    log.trace("Found {} process definition ids from task list. Result - {}",
+        processDefinitionIds.size(), processDefinitionIds);
+    var processDefinitionNames = processDefinitionService
+        .getProcessDefinitionNames(processDefinitionIds);
+    log.trace("Found process definition names - {}", processDefinitionNames);
+    var result = userTaskDtoMapper.toUserTasks(tasks);
+    result.forEach(task -> task.setProcessDefinitionName(
+        processDefinitionNames.get(task.getProcessDefinitionId())));
+    log.trace("Found user tasks - {}", result);
+
+    log.info("Found {} user tasks. Task ids - {}", result.size(),
+        result.stream().map(UserTaskDto::getId).collect(Collectors.joining(", ")));
+
+    return result;
   }
 
   @Override
   public SignableUserTaskDto getTaskById(String taskId) {
+    log.info("Getting unfinished user task by id {}", taskId);
+
     var taskById = getUserTaskById(taskId);
+    log.trace("Task was found in bpms");
     verifyAssignee(taskById);
-    return postProcess(taskById, userTaskDtoMapper.toSignableUserTaskDto(taskById));
+
+    var userTaskDto = userTaskDtoMapper.toSignableUserTaskDto(taskById);
+
+    var data = getFormData(taskById.getProcessInstanceId(), taskById.getTaskDefinitionKey());
+    userTaskDto.setData(data);
+    log.trace("Form data pre-population is found. {}", data);
+
+    var taskProperties = getTaskProperties(taskId);
+    userTaskDto.setESign(Boolean.parseBoolean(taskProperties.get(SIGN_PROPERTY)));
+    userTaskDto.setFormVariables(getTaskFormVariables(taskProperties, taskId));
+    log.trace("Found user task - {}", userTaskDto);
+
+    log.info("Unfinished user task by id {} is found", taskId);
+    return userTaskDto;
   }
 
   @Override
   public CountResultDto countTasks() {
-    var params = TaskCountQueryDto.builder()
-        .orQueries(Collections.singletonList(
-            TaskCountQueryDto.builder()
-                .assignee(AuthUtil.getCurrentUsername())
-                .unassigned(true)
-                .build()))
+    log.info("Getting unfinished user task count");
+    var unassignedCountTaskQuery = TaskCountQueryDto.builder().unassigned(true).build();
+    var taskCountQueryDto = TaskCountQueryDto.builder()
+        .assignee(AuthUtil.getCurrentUsername())
+        .orQueries(List.of(unassignedCountTaskQuery))
         .build();
-    return camundaTaskRestClient.getTaskCountByParams(params);
+    var result = camundaTaskRestClient.getTaskCountByParams(taskCountQueryDto);
+    log.info("Getting unfinished user task count finished - {}", result.getCount());
+    return result;
   }
 
   @Override
   public void completeTaskById(String taskId, FormDataDto formData) {
-    var taskDto = getUserTaskById(taskId);
-    validateFormData(taskDto.getFormKey(), formData);
-    completeTask(taskDto, formData);
+    log.info("Completing user task with id {}", taskId);
+    completeTask(taskId, formData, (id, data) -> {
+    });
+    log.info("Task {} is completed", taskId);
   }
 
   @Override
   public void signOfficerForm(String taskId, FormDataDto formData) {
-    var taskDto = getUserTaskById(taskId);
-    validateFormData(taskDto.getFormKey(), formData);
+    log.info("Completing signable officer task with id {}", taskId);
+    completeTask(taskId, formData, (id, data) -> verifyOfficerFormData(data));
+    log.info("Signable officer task {} is completed", taskId);
+  }
+
+  @Override
+  public void signCitizenForm(String taskId, FormDataDto formData) {
+    log.info("Completing signable citizen task with id {}", taskId);
+    completeTask(taskId, formData, this::verifyCitizenFormData);
+    log.info("Signable citizen task {} is completed", taskId);
+  }
+
+  @Override
+  public void claimTaskById(String taskId) {
+    log.info("Claiming task with id {}", taskId);
+    var currentUserName = AuthUtil.getCurrentUsername();
+    log.trace("Claiming task with id {} to {}", taskId, currentUserName);
+
+    var taskDto = getUserTaskByIdForClaim(taskId);
+    var assignee = taskDto.getAssignee();
+    if (!StringUtils.isEmpty(assignee) && !assignee.equals(currentUserName)) {
+      throw new UserTaskAlreadyAssignedException(taskDto.getName(), "Task already assigned");
+    }
+
+    var claimTaskDto = ClaimTaskDto.builder().userId(currentUserName).build();
+    camundaTaskRestClient.claimTaskById(taskId, claimTaskDto);
+    log.info("Task {} was claimed", taskId);
+  }
+
+  private List<TaskDto> getTaskDtoList(String processInstanceId, Pageable page) {
+    log.debug("Getting assigned to current user or unassigned user tasks of process instance {}. "
+        + "Paging and sorting params - {}", processInstanceId, page);
+    var unassignedTaskQuery = TaskQueryDto.builder()
+        .unassigned(true)
+        .processInstanceId(processInstanceId)
+        .build();
+    var sortingDto = SortingDto.builder()
+        .sortBy(page.getSortBy())
+        .sortOrder(page.getSortOrder())
+        .build();
+    var taskQueryDto = TaskQueryDto.builder()
+        .assignee(AuthUtil.getCurrentUsername())
+        .processInstanceId(processInstanceId)
+        .orQueries(List.of(unassignedTaskQuery))
+        .sorting(List.of(sortingDto))
+        .build();
+    var paginationQueryDto = PaginationQueryDto.builder()
+        .firstResult(page.getFirstResult())
+        .maxResults(page.getMaxResults())
+        .build();
+
+    return camundaTaskRestClient.getTasksByParams(taskQueryDto, paginationQueryDto);
+  }
+
+  private List<String> extractProcessDefinitionIds(List<TaskDto> tasks) {
+    return tasks.stream()
+        .map(TaskDto::getProcessDefinitionId)
+        .collect(Collectors.toList());
+  }
+
+  private void verifyOfficerFormData(FormDataDto formData) {
+    log.debug("Verifying officer signed form data. {}", formData);
     var data = serializeFormData(formData.getData());
     var signature = formData.getSignature();
     var verifyResponseDto = digitalSignatureRestClient.verifyOfficer(
         new VerificationRequestDto(signature, data));
     if (!verifyResponseDto.isValid()) {
+      log.error("Officer task form data hasn't passed the signature verification");
       throw new SignatureValidationException(verifyResponseDto.getError());
     }
-    completeTask(taskDto, formData);
+    log.debug("Officer signed form data verified.");
   }
 
-  @Override
-  public void signCitizenForm(String taskId, FormDataDto formData) {
-    var taskDto = getUserTaskById(taskId);
-    validateFormData(taskDto.getFormKey(), formData);
+  private void verifyCitizenFormData(String taskId, FormDataDto formData) {
+    log.debug("Verifying citizen signed form data. {}", formData);
     var data = serializeFormData(formData.getData());
     var signature = formData.getSignature();
     var taskProperties = taskPropertyRestClient.getTaskProperty(taskId);
     var allowedSubjects = Arrays.stream(Subject.values())
-        .filter(subject -> String.valueOf(true).equals(taskProperties.get(subject.name())))
+        .filter(subject -> Boolean.parseBoolean(taskProperties.get(subject.name())))
         .collect(Collectors.toList());
+    log.trace("Found subjects - {}", allowedSubjects);
 
     if (allowedSubjects.isEmpty()) {
       allowedSubjects = Collections.singletonList(Subject.INDIVIDUAL);
@@ -146,15 +229,10 @@ public class UserTaskServiceImpl implements UserTaskService {
     var verifyResponseDto = digitalSignatureRestClient.verifyCitizen(
         new VerifySubjectRequestDto(allowedSubjects, signature, data));
     if (!verifyResponseDto.isValid()) {
+      log.error("Citizen task form data hasn't passed the signature verification");
       throw new SignatureValidationException(verifyResponseDto.getError());
     }
-    completeTask(taskDto, formData);
-  }
-
-  @Override
-  public void claimTaskById(String taskId) {
-    var taskDto = getUserTaskByIdForClaim(taskId);
-    claimTask(taskDto);
+    log.debug("Citizen signed form data verified.");
   }
 
   private TaskDto getUserTaskByIdForClaim(String taskId) {
@@ -165,60 +243,45 @@ public class UserTaskServiceImpl implements UserTaskService {
     }
   }
 
-  private void claimTask(TaskDto taskDto) {
-    var assignee = taskDto.getAssignee();
-    var currentUserName = AuthUtil.getCurrentUsername();
-    if (!StringUtils.isEmpty(assignee) && !assignee.equals(currentUserName)) {
-      throw new UserTaskAlreadyAssignedException(taskDto.getName(), "Task already assigned");
-    }
-    camundaTaskRestClient.claimTaskById(
-        taskDto.getId(), ClaimTaskDto.builder().userId(currentUserName).build());
-  }
+  private void completeTask(String taskId, FormDataDto formData,
+      BiConsumer<String, FormDataDto> verifyingConsumer) {
+    log.debug("Completing user task {} with form data {}", taskId, formData);
 
-  private void completeTask(TaskDto taskDto, FormDataDto formData) {
+    var taskDto = getUserTaskById(taskId);
+    log.trace("User task {} was found", taskId);
+
+    validateFormData(taskDto.getFormKey(), formData);
+    log.trace("Form data {} has passed the validation", formData);
+
+    verifyingConsumer.accept(taskId, formData);
+    log.trace("Form data has passed the signature verification if there was any");
+
     verifyAssignee(taskDto);
+    log.trace("Verified if user task assignee is current user.");
+
     saveFormData(taskDto, formData);
-    camundaTaskRestClient.completeTaskById(taskDto.getId(), new CompleteTaskDto());
+    log.trace("Form data is saved to ceph");
+
+    camundaTaskRestClient.completeTaskById(taskId, new CompleteTaskDto());
+    log.debug("User task {} successfully completed", taskId);
   }
 
-  /**
-   * Method provides a possibility to fill extract properties on the subclass level
-   *
-   * @param userTaskDto specified task.
-   * @return filled user task.
-   */
-  private SignableUserTaskDto postProcess(TaskDto taskDto, SignableUserTaskDto userTaskDto) {
-    fillFormData(taskDto, userTaskDto);
-    var taskProperties = getTaskProperties(userTaskDto.getId());
-    setSignTypeForTask(userTaskDto, taskProperties);
-    setTaskFormVariables(userTaskDto, taskProperties);
-    return userTaskDto;
-  }
-
-  private List<UserTaskDto> postProcess(List<UserTaskDto> userTaskDtos) {
-    fillProcessDefinitionName(userTaskDtos);
-    return userTaskDtos;
-  }
-
-  private void setSignTypeForTask(SignableUserTaskDto userTaskDto, Map<String, String> taskProperties) {
-    var eSign = taskProperties.get(SIGN_PROPERTY);
-    userTaskDto.setESign(Boolean.parseBoolean(eSign));
-  }
-
-  private void setTaskFormVariables(SignableUserTaskDto userTaskDto, Map<String, String> taskProperties) {
+  private Map<String, Object> getTaskFormVariables(Map<String, String> taskProperties,
+      String taskId) {
     var formVariablesProperties = taskProperties.get(FORM_VARIABLES_PROPERTY);
-
-    if (Objects.nonNull(formVariablesProperties)) {
-      var taskVariables = camundaTaskRestClient.getTaskVariables(userTaskDto.getId());
-      var variables = List.of(formVariablesProperties.split(FORM_VARIABLES_REGEX));
-      var formVariables = taskVariables.entrySet().stream()
-          .filter(entry -> variables.contains(entry.getKey()))
-          .collect(Collectors.toMap(Entry::getKey, entry -> entry.getValue().getValue()));
-      userTaskDto.setFormVariables(formVariables);
+    if (Objects.isNull(formVariablesProperties)) {
+      return null;
     }
+
+    var formVariableNames = List.of(formVariablesProperties.split(FORM_VARIABLES_REGEX));
+    var allTaskVariables = camundaTaskRestClient.getTaskVariables(taskId);
+
+    return allTaskVariables.entrySet().stream()
+        .filter(entry -> formVariableNames.contains(entry.getKey()))
+        .collect(Collectors.toMap(Entry::getKey, entry -> entry.getValue().getValue()));
   }
 
-  private Map<String, String> getTaskProperties(String taskId){
+  private Map<String, String> getTaskProperties(String taskId) {
     return taskPropertyRestClient.getTaskProperty(taskId);
   }
 
@@ -226,26 +289,13 @@ public class UserTaskServiceImpl implements UserTaskService {
     var processInstanceId = taskDto.getProcessInstanceId();
     var taskDefinitionKey = taskDto.getTaskDefinitionKey();
 
-    var secureSysVarRefTaskFormData = cephKeyProvider.generateKey(taskDefinitionKey, processInstanceId);
+    var secureSysVarRefTaskFormData = cephKeyProvider.generateKey(taskDefinitionKey,
+        processInstanceId);
 
-    putStringFormDataToCeph(secureSysVarRefTaskFormData, fromData);
+    putFormDataToCeph(secureSysVarRefTaskFormData, fromData);
   }
 
-  private void fillFormData(TaskDto taskDto, SignableUserTaskDto userTaskDto) {
-    var processInstanceId = taskDto.getProcessInstanceId();
-    var taskDefinitionKey = taskDto.getTaskDefinitionKey();
-
-    var secureSysVarRefTaskFormData = cephKeyProvider.generateKey(taskDefinitionKey, processInstanceId);
-
-    var formData = getStringFormDataFromCeph(secureSysVarRefTaskFormData);
-    if (formData.isEmpty()) {
-      return;
-    }
-
-    userTaskDto.setData(formData.get().getData());
-  }
-
-  private void putStringFormDataToCeph(String secureSysVarRefTaskFormData, FormDataDto formData) {
+  private void putFormDataToCeph(String secureSysVarRefTaskFormData, FormDataDto formData) {
     try {
       cephService.putFormData(secureSysVarRefTaskFormData, formData);
     } catch (CephCommunicationException ex) {
@@ -254,7 +304,12 @@ public class UserTaskServiceImpl implements UserTaskService {
     }
   }
 
-  private Optional<FormDataDto> getStringFormDataFromCeph(String secureSysVarRefTaskFormData) {
+  private Map<String, Object> getFormData(String processInstanceId, String taskDefinitionKey) {
+    var cephKey = cephKeyProvider.generateKey(taskDefinitionKey, processInstanceId);
+    return getFormDataFromCeph(cephKey).map(FormDataDto::getData).orElse(null);
+  }
+
+  private Optional<FormDataDto> getFormDataFromCeph(String secureSysVarRefTaskFormData) {
     try {
       return cephService.getFormData(secureSysVarRefTaskFormData);
     } catch (CephCommunicationException ex) {
@@ -272,26 +327,6 @@ public class UserTaskServiceImpl implements UserTaskService {
     }
   }
 
-  private void fillProcessDefinitionName(List<UserTaskDto> userTaskDtos) {
-    List<String> processDefinitionIds = userTaskDtos.stream()
-        .map(UserTaskDto::getProcessDefinitionId)
-        .distinct().collect(Collectors.toList());
-    var processDefinitionQueryDto = ProcessDefinitionQueryDto.builder()
-        .processDefinitionIdIn(processDefinitionIds)
-        .build();
-    List<ProcessDefinitionDto> processDefinitions = processDefinitionRestClient
-        .getProcessDefinitionsByParams(processDefinitionQueryDto);
-    Map<String, ProcessDefinitionDto> processDefinitionIdAndDtoMap = processDefinitions.stream()
-        .collect(Collectors.toMap(ProcessDefinitionDto::getId, Function.identity()));
-    userTaskDtos.forEach(task -> {
-      var processDefinitionDto = processDefinitionIdAndDtoMap
-          .get(task.getProcessDefinitionId());
-      if (Objects.nonNull(processDefinitionDto)) {
-        task.setProcessDefinitionName(processDefinitionDto.getName());
-      }
-    });
-  }
-
   private TaskDto getUserTaskById(String taskId) {
     try {
       return camundaTaskRestClient.getTaskById(taskId);
@@ -303,22 +338,11 @@ public class UserTaskServiceImpl implements UserTaskService {
   private void verifyAssignee(TaskDto taskDto) {
     var assignee = taskDto.getAssignee();
     var currentUserName = AuthUtil.getCurrentUsername();
-    if (Objects.nonNull(assignee) && assignee.equals(currentUserName)) {
-      return;
+    if (Objects.isNull(assignee) || !assignee.equals(currentUserName)) {
+      throw new UserTaskAuthorizationException(
+          String.format(USER_TASK_AUTHORIZATION_ERROR_MSG, currentUserName, taskDto.getId()),
+          taskDto.getId());
     }
-    throw new UserTaskAuthorizationException(
-        String.format(USER_TASK_AUTHORIZATION_ERROR_MSG, currentUserName, taskDto.getId()),
-        taskDto.getId());
-  }
-
-  private TaskQueryDto prepareDefaultSearchTaskQuery() {
-    return TaskQueryDto.builder()
-        .orQueries(Collections.singletonList(
-            TaskQueryDto.builder()
-                .assignee(AuthUtil.getCurrentUsername())
-                .unassigned(true)
-                .build()))
-        .build();
   }
 
   private void validateFormData(String formId, FormDataDto formDataDto) {

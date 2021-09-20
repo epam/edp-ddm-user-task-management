@@ -10,6 +10,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.epam.digital.data.platform.bpms.api.dto.SortingDto;
+import com.epam.digital.data.platform.bpms.api.dto.TaskQueryDto;
 import com.epam.digital.data.platform.dso.api.dto.ErrorDto;
 import com.epam.digital.data.platform.dso.api.dto.Subject;
 import com.epam.digital.data.platform.dso.api.dto.VerificationResponseDto;
@@ -20,14 +22,15 @@ import com.epam.digital.data.platform.starter.errorhandling.dto.ErrorsListDto;
 import com.epam.digital.data.platform.starter.errorhandling.dto.SystemErrorDto;
 import com.epam.digital.data.platform.starter.errorhandling.dto.ValidationErrorDto;
 import com.epam.digital.data.platform.usrtaskmgt.BaseIT;
-import com.epam.digital.data.platform.usrtaskmgt.dto.SignableUserTaskDto;
-import com.epam.digital.data.platform.usrtaskmgt.dto.UserTaskDto;
+import com.epam.digital.data.platform.usrtaskmgt.model.SignableUserTaskDto;
+import com.epam.digital.data.platform.usrtaskmgt.model.UserTaskDto;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import lombok.SneakyThrows;
 import org.assertj.core.util.Lists;
 import org.camunda.bpm.engine.impl.persistence.entity.TaskEntity;
 import org.camunda.bpm.engine.rest.dto.CountResultDto;
@@ -95,7 +98,7 @@ public class UserTaskControllerIT extends BaseIT {
     assertThat(taskById.getId()).isEqualTo(testTaskId);
     assertThat(taskById.getData()).isNull();
     assertThat(taskById.isESign()).isTrue();
-    assertThat(taskById.getFormVariables().get("fullName")).isEqualTo("Test Full Name");
+    assertThat(taskById.getFormVariables()).containsEntry("fullName", "Test Full Name");
   }
 
   @Test
@@ -114,7 +117,7 @@ public class UserTaskControllerIT extends BaseIT {
     assertThat(taskById.getId()).isEqualTo(testTaskId);
     assertThat(taskById.getData()).isNull();
     assertThat(taskById.isESign()).isTrue();
-    assertThat(taskById.getFormVariables().get("fullName")).isEqualTo("Test Full Name");
+    assertThat(taskById.getFormVariables()).containsEntry("fullName", "Test Full Name");
   }
 
   @Test
@@ -139,7 +142,7 @@ public class UserTaskControllerIT extends BaseIT {
     assertThat(taskById.getData()).isNotNull();
     assertThat(taskById.getData()).hasSize(1);
     assertThat(taskById.getData()).containsEntry("field1", "fieldValue1");
-    assertThat(taskById.getFormVariables().get("fullName")).isEqualTo("Test Full Name");
+    assertThat(taskById.getFormVariables()).containsEntry("fullName", "Test Full Name");
   }
 
   @Test
@@ -347,6 +350,8 @@ public class UserTaskControllerIT extends BaseIT {
 
   @Test
   public void shouldGetTasksByProcessInstanceId() {
+    mockTaskByProcessInstanceId();
+
     MockHttpServletRequestBuilder request = get("/api/task")
         .param("processInstanceId", testProcessInstanceId)
         .accept(MediaType.APPLICATION_JSON_VALUE);
@@ -519,5 +524,30 @@ public class UserTaskControllerIT extends BaseIT {
         .content("{\"data\" : { \"}}");
 
     performWithTokenOfficerRole(request).andExpect(status().is(400));
+  }
+
+  @SneakyThrows
+  private void mockTaskByProcessInstanceId() {
+    var task = new TaskEntity();
+    task.setProcessInstanceId(testProcessInstanceId);
+    var taskDto = TaskDto.fromEntity(task);
+
+    var requestDto = TaskQueryDto.builder().processInstanceId(testProcessInstanceId)
+        .assignee(
+            tokenParser.parseClaims(tokenConfig.getValueWithRoleOfficer()).getPreferredUsername())
+        .orQueries(Collections.singletonList(TaskQueryDto.builder()
+            .processInstanceId(testProcessInstanceId)
+            .unassigned(true)
+            .build()))
+        .sorting(Lists.newArrayList(SortingDto.builder().build()))
+        .build();
+    bpmServer.addStubMapping(
+        stubFor(WireMock.post(urlPathEqualTo("/api/task"))
+            .withRequestBody(equalTo(objectMapper.writeValueAsString(requestDto)))
+            .willReturn(aResponse()
+                .withHeader("Content-Type", "application/json")
+                .withStatus(200)
+                .withBody(objectMapper.writeValueAsString(Lists.newArrayList(taskDto)))))
+    );
   }
 }

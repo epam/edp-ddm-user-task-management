@@ -1,4 +1,4 @@
-package com.epam.digital.data.platform.usrtaskmgt.dto;
+package com.epam.digital.data.platform.usrtaskmgt.model;
 
 import org.camunda.bpm.engine.impl.persistence.entity.TaskEntity;
 

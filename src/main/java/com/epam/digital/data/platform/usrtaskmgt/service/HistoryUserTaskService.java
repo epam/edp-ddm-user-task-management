@@ -1,6 +1,7 @@
 package com.epam.digital.data.platform.usrtaskmgt.service;
 
-import com.epam.digital.data.platform.usrtaskmgt.dto.HistoryUserTaskDto;
+import com.epam.digital.data.platform.usrtaskmgt.model.HistoryUserTaskDto;
+import com.epam.digital.data.platform.usrtaskmgt.model.Pageable;
 import java.util.List;
 import org.camunda.bpm.engine.rest.dto.CountResultDto;
 
@@ -16,14 +17,11 @@ public interface HistoryUserTaskService {
   /**
    * Method for getting a list of finished user task entities.
    *
-   * @param firstResult specifies the index of the first result
-   * @param maxResults specifies the maximum number of results
-   * @param sortBy parameter to sort the results by a given criterion
-   * @param sortOrder parameter to sort the results in a given order
+   * @param pageable specifies the index of the first result, maximum number of results and result
+   *                 sorting
    * @return the list of finished user tasks.
    */
-  List<HistoryUserTaskDto> getHistoryTasks(Integer firstResult, Integer maxResults, String sortBy,
-      String sortOrder);
+  List<HistoryUserTaskDto> getHistoryTasks(Pageable pageable);
 
   /**
    * Method for getting the number of finished tasks.

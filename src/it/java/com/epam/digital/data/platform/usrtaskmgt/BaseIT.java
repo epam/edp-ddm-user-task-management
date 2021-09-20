@@ -19,7 +19,7 @@ import com.epam.digital.data.platform.dso.api.dto.VerifySubjectResponseDto;
 import com.epam.digital.data.platform.starter.security.jwt.TokenParser;
 import com.epam.digital.data.platform.starter.validation.dto.FormDto;
 import com.epam.digital.data.platform.usrtaskmgt.config.TokenConfig;
-import com.epam.digital.data.platform.usrtaskmgt.dto.TestTaskDto;
+import com.epam.digital.data.platform.usrtaskmgt.model.TestTaskDto;
 import com.epam.digital.data.platform.usrtaskmgt.util.CephKeyProvider;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.tomakehurst.wiremock.WireMockServer;
@@ -99,7 +99,6 @@ public abstract class BaseIT {
     mockGetTasks();
     mockGetProcessDefinitionsByPdIds(Lists.newArrayList("pdId1", "pdId2"));
     mockTaskCompleteById(testTaskId);
-    mockTaskByProcessInstanceId(testProcessInstanceId);
     mockHistoryTasks();
     mockTaskProperties();
   }
@@ -245,29 +244,6 @@ public abstract class BaseIT {
                 .withStatus(200)
                 .withHeader("Content-Type", "application/json")
                 .withBody(objectMapper.writeValueAsString(completeVariables))))
-    );
-  }
-
-  @SneakyThrows
-  public void mockTaskByProcessInstanceId(String processInstanceId) {
-    var task = new TaskEntity();
-    task.setProcessInstanceId(processInstanceId);
-    var taskDto = TaskDto.fromEntity(task);
-
-    var requestDto = TaskQueryDto.builder().processInstanceId(testProcessInstanceId)
-        .orQueries(Collections.singletonList(TaskQueryDto.builder()
-            .assignee(tokenParser.parseClaims(tokenConfig.getValueWithRoleOfficer()).getPreferredUsername())
-            .unassigned(true)
-            .build()))
-        .sorting(Lists.newArrayList(SortingDto.builder().build()))
-        .build();
-    bpmServer.addStubMapping(
-        stubFor(post(urlPathEqualTo("/api/task"))
-            .withRequestBody(equalTo(objectMapper.writeValueAsString(requestDto)))
-            .willReturn(aResponse()
-                .withHeader("Content-Type", "application/json")
-                .withStatus(200)
-                .withBody(objectMapper.writeValueAsString(Lists.newArrayList(taskDto)))))
     );
   }
 
