@@ -119,9 +119,11 @@ public class UserTaskServiceImpl implements UserTaskService {
   @Override
   public CountResultDto countTasks() {
     log.info("Getting unfinished user task count");
-    var unassignedCountTaskQuery = TaskCountQueryDto.builder().unassigned(true).build();
-    var taskCountQueryDto = TaskCountQueryDto.builder()
+    var unassignedCountTaskQuery = TaskCountQueryDto.builder()
         .assignee(AuthUtil.getCurrentUsername())
+        .unassigned(true)
+        .build();
+    var taskCountQueryDto = TaskCountQueryDto.builder()
         .orQueries(List.of(unassignedCountTaskQuery))
         .build();
     var result = camundaTaskRestClient.getTaskCountByParams(taskCountQueryDto);
@@ -173,14 +175,13 @@ public class UserTaskServiceImpl implements UserTaskService {
         + "Paging and sorting params - {}", processInstanceId, page);
     var unassignedTaskQuery = TaskQueryDto.builder()
         .unassigned(true)
-        .processInstanceId(processInstanceId)
+        .assignee(AuthUtil.getCurrentUsername())
         .build();
     var sortingDto = SortingDto.builder()
         .sortBy(page.getSortBy())
         .sortOrder(page.getSortOrder())
         .build();
     var taskQueryDto = TaskQueryDto.builder()
-        .assignee(AuthUtil.getCurrentUsername())
         .processInstanceId(processInstanceId)
         .orQueries(List.of(unassignedTaskQuery))
         .sorting(List.of(sortingDto))

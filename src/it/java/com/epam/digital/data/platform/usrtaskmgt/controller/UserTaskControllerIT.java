@@ -533,11 +533,10 @@ public class UserTaskControllerIT extends BaseIT {
     var taskDto = TaskDto.fromEntity(task);
 
     var requestDto = TaskQueryDto.builder().processInstanceId(testProcessInstanceId)
-        .assignee(
-            tokenParser.parseClaims(tokenConfig.getValueWithRoleOfficer()).getPreferredUsername())
         .orQueries(Collections.singletonList(TaskQueryDto.builder()
-            .processInstanceId(testProcessInstanceId)
             .unassigned(true)
+            .assignee(tokenParser.parseClaims(tokenConfig.getValueWithRoleOfficer())
+                .getPreferredUsername())
             .build()))
         .sorting(Lists.newArrayList(SortingDto.builder().build()))
         .build();
