@@ -125,9 +125,7 @@ public class UserTaskControllerIT extends BaseIT {
     var taskDefinitionKey = "taskDefinitionKey";
     var processInstanceId = "processInstanceId";
 
-    var processInstanceVariableName = String
-        .format("secure-sys-var-ref-task-form-data-%s", taskDefinitionKey);
-    var cephKey = String.format("lowcode-%s-%s", processInstanceId, processInstanceVariableName);
+    var cephKey = cephKeyProvider.generateKey(taskDefinitionKey, processInstanceId);
 
     mockTaskByParams(testTaskId, processDefinitionId1, processInstanceId, taskDefinitionKey);
     mockGetCephContent(cephKey, "{\"data\" : {\"field1\": \"fieldValue1\"}}");
