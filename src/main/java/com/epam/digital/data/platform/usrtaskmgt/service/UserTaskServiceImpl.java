@@ -290,10 +290,9 @@ public class UserTaskServiceImpl implements UserTaskService {
     var processInstanceId = taskDto.getProcessInstanceId();
     var taskDefinitionKey = taskDto.getTaskDefinitionKey();
 
-    var secureSysVarRefTaskFormData = cephKeyProvider.generateKey(taskDefinitionKey,
-        processInstanceId);
+    var formDataCephKey = cephKeyProvider.generateKey(taskDefinitionKey, processInstanceId);
 
-    putFormDataToCeph(secureSysVarRefTaskFormData, fromData);
+    putFormDataToCeph(formDataCephKey, fromData);
   }
 
   private void putFormDataToCeph(String secureSysVarRefTaskFormData, FormDataDto formData) {
@@ -310,9 +309,9 @@ public class UserTaskServiceImpl implements UserTaskService {
     return getFormDataFromCeph(cephKey).map(FormDataDto::getData).orElse(null);
   }
 
-  private Optional<FormDataDto> getFormDataFromCeph(String secureSysVarRefTaskFormData) {
+  private Optional<FormDataDto> getFormDataFromCeph(String formDataCephKey) {
     try {
-      return cephService.getFormData(secureSysVarRefTaskFormData);
+      return cephService.getFormData(formDataCephKey);
     } catch (CephCommunicationException ex) {
       log.warn("Couldn't get form data from ceph", ex);
       return Optional.empty();
