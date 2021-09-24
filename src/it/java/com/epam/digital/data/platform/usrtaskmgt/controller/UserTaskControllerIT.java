@@ -12,6 +12,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.epam.digital.data.platform.bpms.api.dto.SortingDto;
 import com.epam.digital.data.platform.bpms.api.dto.TaskQueryDto;
+import com.epam.digital.data.platform.bpms.api.dto.UserTaskDto;
 import com.epam.digital.data.platform.dso.api.dto.ErrorDto;
 import com.epam.digital.data.platform.dso.api.dto.Subject;
 import com.epam.digital.data.platform.dso.api.dto.VerificationResponseDto;
@@ -23,7 +24,6 @@ import com.epam.digital.data.platform.starter.errorhandling.dto.SystemErrorDto;
 import com.epam.digital.data.platform.starter.errorhandling.dto.ValidationErrorDto;
 import com.epam.digital.data.platform.usrtaskmgt.BaseIT;
 import com.epam.digital.data.platform.usrtaskmgt.model.SignableUserTaskDto;
-import com.epam.digital.data.platform.usrtaskmgt.model.UserTaskDto;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
@@ -539,7 +539,7 @@ public class UserTaskControllerIT extends BaseIT {
         .sorting(Lists.newArrayList(SortingDto.builder().build()))
         .build();
     bpmServer.addStubMapping(
-        stubFor(WireMock.post(urlPathEqualTo("/api/task"))
+        stubFor(WireMock.post(urlPathEqualTo("/api/extended/task"))
             .withRequestBody(equalTo(objectMapper.writeValueAsString(requestDto)))
             .willReturn(aResponse()
                 .withHeader("Content-Type", "application/json")

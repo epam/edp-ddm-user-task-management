@@ -1,12 +1,12 @@
 package com.epam.digital.data.platform.usrtaskmgt.service;
 
+import com.epam.digital.data.platform.bpms.api.dto.UserTaskDto;
 import com.epam.digital.data.platform.integration.ceph.dto.FormDataDto;
 import com.epam.digital.data.platform.usrtaskmgt.exception.SignatureValidationException;
 import com.epam.digital.data.platform.usrtaskmgt.exception.UserTaskAlreadyAssignedException;
 import com.epam.digital.data.platform.usrtaskmgt.exception.UserTaskNotExistsOrCompletedException;
 import com.epam.digital.data.platform.usrtaskmgt.model.Pageable;
 import com.epam.digital.data.platform.usrtaskmgt.model.SignableUserTaskDto;
-import com.epam.digital.data.platform.usrtaskmgt.model.UserTaskDto;
 import java.util.List;
 import org.camunda.bpm.engine.rest.dto.CountResultDto;
 

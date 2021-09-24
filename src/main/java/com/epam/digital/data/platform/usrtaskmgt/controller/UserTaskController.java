@@ -1,5 +1,6 @@
 package com.epam.digital.data.platform.usrtaskmgt.controller;
 
+import com.epam.digital.data.platform.bpms.api.dto.UserTaskDto;
 import com.epam.digital.data.platform.integration.ceph.dto.FormDataDto;
 import com.epam.digital.data.platform.starter.errorhandling.dto.SystemErrorDto;
 import com.epam.digital.data.platform.starter.errorhandling.dto.ValidationErrorDto;
@@ -8,7 +9,6 @@ import com.epam.digital.data.platform.starter.security.annotation.PreAuthorizeCi
 import com.epam.digital.data.platform.starter.security.annotation.PreAuthorizeOfficer;
 import com.epam.digital.data.platform.usrtaskmgt.model.Pageable;
 import com.epam.digital.data.platform.usrtaskmgt.model.SignableUserTaskDto;
-import com.epam.digital.data.platform.usrtaskmgt.model.UserTaskDto;
 import com.epam.digital.data.platform.usrtaskmgt.model.swagger.PageableAsQueryParam;
 import com.epam.digital.data.platform.usrtaskmgt.service.UserTaskService;
 import io.swagger.v3.oas.annotations.Operation;

@@ -1,7 +1,7 @@
 package com.epam.digital.data.platform.usrtaskmgt.controller;
 
+import com.epam.digital.data.platform.bpms.api.dto.HistoryUserTaskDto;
 import com.epam.digital.data.platform.starter.security.annotation.PreAuthorizeAnySystemRole;
-import com.epam.digital.data.platform.usrtaskmgt.model.HistoryUserTaskDto;
 import com.epam.digital.data.platform.usrtaskmgt.model.Pageable;
 import com.epam.digital.data.platform.usrtaskmgt.model.swagger.PageableAsQueryParam;
 import com.epam.digital.data.platform.usrtaskmgt.service.HistoryUserTaskService;
