@@ -7,8 +7,8 @@ import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 
+import com.epam.digital.data.platform.bpms.api.dto.HistoryUserTaskDto;
 import com.epam.digital.data.platform.usrtaskmgt.BaseIT;
-import com.epam.digital.data.platform.usrtaskmgt.model.HistoryUserTaskDto;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.Arrays;
 import java.util.List;

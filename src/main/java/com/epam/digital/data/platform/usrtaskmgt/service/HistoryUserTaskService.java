@@ -1,6 +1,6 @@
 package com.epam.digital.data.platform.usrtaskmgt.service;
 
-import com.epam.digital.data.platform.usrtaskmgt.model.HistoryUserTaskDto;
+import com.epam.digital.data.platform.bpms.api.dto.HistoryUserTaskDto;
 import com.epam.digital.data.platform.usrtaskmgt.model.Pageable;
 import java.util.List;
 import org.camunda.bpm.engine.rest.dto.CountResultDto;

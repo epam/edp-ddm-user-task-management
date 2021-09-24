@@ -3,6 +3,7 @@ package com.epam.digital.data.platform.usrtaskmgt;
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.containing;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.equalToJson;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.head;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
@@ -12,8 +13,8 @@ import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.epam.digital.data.platform.bpms.api.dto.SortingDto;
-import com.epam.digital.data.platform.bpms.api.dto.TaskQueryDto;
+import com.epam.digital.data.platform.bpms.api.dto.HistoryUserTaskDto;
+import com.epam.digital.data.platform.bpms.api.dto.UserTaskDto;
 import com.epam.digital.data.platform.dso.api.dto.VerificationResponseDto;
 import com.epam.digital.data.platform.dso.api.dto.VerifySubjectResponseDto;
 import com.epam.digital.data.platform.starter.security.jwt.TokenParser;
@@ -25,21 +26,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import java.util.ArrayList;
 import java.util.Calendar.Builder;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
-import java.util.stream.Collectors;
 import lombok.SneakyThrows;
 import org.assertj.core.util.Lists;
-import org.camunda.bpm.engine.impl.persistence.entity.HistoricTaskInstanceEntity;
-import org.camunda.bpm.engine.impl.persistence.entity.ProcessDefinitionEntity;
-import org.camunda.bpm.engine.impl.persistence.entity.SuspensionState;
-import org.camunda.bpm.engine.impl.persistence.entity.TaskEntity;
 import org.camunda.bpm.engine.rest.dto.CountResultDto;
 import org.camunda.bpm.engine.rest.dto.VariableValueDto;
-import org.camunda.bpm.engine.rest.dto.repository.ProcessDefinitionDto;
 import org.camunda.bpm.engine.rest.dto.task.TaskDto;
 import org.junit.After;
 import org.junit.Before;
@@ -97,7 +90,6 @@ public abstract class BaseIT {
   public void init() {
     mockTaskCount(testTaskCount);
     mockGetTasks();
-    mockGetProcessDefinitionsByPdIds(Lists.newArrayList("pdId1", "pdId2"));
     mockTaskCompleteById(testTaskId);
     mockHistoryTasks();
     mockTaskProperties();
@@ -196,40 +188,22 @@ public abstract class BaseIT {
 
   @SneakyThrows
   public void mockGetTasks() {
-    var task1 = new TaskEntity();
+    var task1 = new UserTaskDto();
     task1.setId("task1");
     task1.setProcessDefinitionId("pdId1");
-    task1.setSuspensionState(SuspensionState.ACTIVE.getStateCode());
-    var taskDto1 = TaskDto.fromEntity(task1);
-    var task2 = new TaskEntity();
+    task1.setProcessDefinitionName("testName");
+    task1.setSuspended(false);
+    var task2 = new UserTaskDto();
     task2.setId("task2");
     task2.setProcessDefinitionId("pdId2");
-    task2.setSuspensionState(SuspensionState.SUSPENDED.getStateCode());
-    var taskDto2 = TaskDto.fromEntity(task2);
+    task2.setProcessDefinitionName("testName");
+    task2.setSuspended(true);
     bpmServer.addStubMapping(
-        stubFor(post(urlPathEqualTo("/api/task"))
+        stubFor(post(urlPathEqualTo("/api/extended/task"))
             .willReturn(aResponse()
                 .withHeader("Content-Type", "application/json")
                 .withStatus(200)
-                .withBody(objectMapper.writeValueAsString(Lists.newArrayList(taskDto1, taskDto2))))
-        )
-    );
-  }
-
-  @SneakyThrows
-  public void mockGetProcessDefinitionsByPdIds(List<String> pdIds) {
-    var processDefinitionDtos = pdIds.stream().map(id -> {
-      var definition = new ProcessDefinitionEntity();
-      definition.setId(id);
-      definition.setName("testName");
-      return ProcessDefinitionDto.fromProcessDefinition(definition);
-    }).collect(Collectors.toList());
-    bpmServer.addStubMapping(
-        stubFor(get(urlPathEqualTo("/api/process-definition"))
-            .willReturn(aResponse()
-                .withHeader("Content-Type", "application/json")
-                .withStatus(200)
-                .withBody(objectMapper.writeValueAsString(processDefinitionDtos)))
+                .withBody(objectMapper.writeValueAsString(Lists.newArrayList(task1, task2))))
         )
     );
   }
@@ -249,16 +223,16 @@ public abstract class BaseIT {
 
   @SneakyThrows
   public void mockHistoryTasks() {
-    HistoricTaskInstanceEntity historicTaskInstanceEntity = new HistoricTaskInstanceEntity();
-    historicTaskInstanceEntity.setId("testHistoryId");
+    HistoryUserTaskDto historyUserTaskDto = new HistoryUserTaskDto();
+    historyUserTaskDto.setId("testHistoryId");
     bpmServer.addStubMapping(
-        stubFor(get(urlPathEqualTo("/api/history/task"))
-            .withQueryParam("finished", equalTo("true"))
+        stubFor(post(urlPathEqualTo("/api/extended/history/task"))
+            .withRequestBody(equalToJson("{\"taskAssignee\": \"testuser\", \"finished\": true}"))
             .willReturn(aResponse()
                 .withHeader("Content-Type", "application/json")
                 .withStatus(200)
                 .withBody(objectMapper
-                    .writeValueAsString(Lists.newArrayList(historicTaskInstanceEntity)))))
+                    .writeValueAsString(Lists.newArrayList(historyUserTaskDto)))))
     );
   }
 

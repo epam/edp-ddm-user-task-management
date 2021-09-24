@@ -2,6 +2,8 @@ package com.epam.digital.data.platform.usrtaskmgt.controller;
 
 import static org.mockito.Mockito.lenient;
 
+import com.epam.digital.data.platform.bpms.api.dto.HistoryUserTaskDto;
+import com.epam.digital.data.platform.bpms.api.dto.UserTaskDto;
 import com.epam.digital.data.platform.bpms.client.exception.InternalServerErrorException;
 import com.epam.digital.data.platform.bpms.client.exception.TaskNotFoundException;
 import com.epam.digital.data.platform.starter.errorhandling.BaseRestExceptionHandler;
@@ -11,10 +13,8 @@ import com.epam.digital.data.platform.usrtaskmgt.controller.config.CustomMockMvc
 import com.epam.digital.data.platform.usrtaskmgt.enums.UserTaskManagementMessage;
 import com.epam.digital.data.platform.usrtaskmgt.exception.UserTaskAlreadyAssignedException;
 import com.epam.digital.data.platform.usrtaskmgt.exception.UserTaskNotExistsOrCompletedException;
-import com.epam.digital.data.platform.usrtaskmgt.model.HistoryUserTaskDto;
 import com.epam.digital.data.platform.usrtaskmgt.model.Pageable;
 import com.epam.digital.data.platform.usrtaskmgt.model.SignableUserTaskDto;
-import com.epam.digital.data.platform.usrtaskmgt.model.UserTaskDto;
 import com.epam.digital.data.platform.usrtaskmgt.service.HistoryUserTaskService;
 import com.epam.digital.data.platform.usrtaskmgt.service.UserTaskService;
 import com.google.common.collect.ImmutableMap;

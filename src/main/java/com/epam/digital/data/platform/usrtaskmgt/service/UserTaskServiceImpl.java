@@ -5,7 +5,9 @@ import com.epam.digital.data.platform.bpms.api.dto.PaginationQueryDto;
 import com.epam.digital.data.platform.bpms.api.dto.SortingDto;
 import com.epam.digital.data.platform.bpms.api.dto.TaskCountQueryDto;
 import com.epam.digital.data.platform.bpms.api.dto.TaskQueryDto;
+import com.epam.digital.data.platform.bpms.api.dto.UserTaskDto;
 import com.epam.digital.data.platform.bpms.client.CamundaTaskRestClient;
+import com.epam.digital.data.platform.bpms.client.ExtendedUserTaskRestClient;
 import com.epam.digital.data.platform.bpms.client.TaskPropertyRestClient;
 import com.epam.digital.data.platform.bpms.client.exception.TaskNotFoundException;
 import com.epam.digital.data.platform.dso.api.dto.Subject;
@@ -25,8 +27,6 @@ import com.epam.digital.data.platform.usrtaskmgt.exception.UserTaskNotExistsOrCo
 import com.epam.digital.data.platform.usrtaskmgt.mapper.UserTaskDtoMapper;
 import com.epam.digital.data.platform.usrtaskmgt.model.Pageable;
 import com.epam.digital.data.platform.usrtaskmgt.model.SignableUserTaskDto;
-import com.epam.digital.data.platform.usrtaskmgt.model.UserTaskDto;
-import com.epam.digital.data.platform.usrtaskmgt.service.internal.ProcessDefinitionService;
 import com.epam.digital.data.platform.usrtaskmgt.util.AuthUtil;
 import com.epam.digital.data.platform.usrtaskmgt.util.CephKeyProvider;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -59,11 +59,11 @@ public class UserTaskServiceImpl implements UserTaskService {
   private static final String FORM_VARIABLES_REGEX = "\\s*,\\s*";
 
   private final CamundaTaskRestClient camundaTaskRestClient;
+  private final ExtendedUserTaskRestClient extendedUserTaskRestClient;
   private final TaskPropertyRestClient taskPropertyRestClient;
   private final DigitalSignatureRestClient digitalSignatureRestClient;
 
   private final FormDataCephService cephService;
-  private final ProcessDefinitionService processDefinitionService;
 
   private final UserTaskDtoMapper userTaskDtoMapper;
   private final ObjectMapper objectMapper;
@@ -75,22 +75,12 @@ public class UserTaskServiceImpl implements UserTaskService {
     log.info("Getting unfinished user tasks for process instance {}. Parameters: {}",
         processInstanceId, page);
     var tasks = getTaskDtoList(processInstanceId, page);
-    log.trace("Found {} history tasks", tasks.size());
-    var processDefinitionIds = extractProcessDefinitionIds(tasks);
-    log.trace("Found {} process definition ids from task list. Result - {}",
-        processDefinitionIds.size(), processDefinitionIds);
-    var processDefinitionNames = processDefinitionService
-        .getProcessDefinitionNames(processDefinitionIds);
-    log.trace("Found process definition names - {}", processDefinitionNames);
-    var result = userTaskDtoMapper.toUserTasks(tasks);
-    result.forEach(task -> task.setProcessDefinitionName(
-        processDefinitionNames.get(task.getProcessDefinitionId())));
-    log.trace("Found user tasks - {}", result);
+    log.trace("Found user tasks - {}", tasks);
 
-    log.info("Found {} user tasks. Task ids - {}", result.size(),
-        result.stream().map(UserTaskDto::getId).collect(Collectors.joining(", ")));
+    log.info("Found {} user tasks. Task ids - {}", tasks.size(),
+        tasks.stream().map(UserTaskDto::getId).collect(Collectors.joining(", ")));
 
-    return result;
+    return tasks;
   }
 
   @Override
@@ -170,7 +160,7 @@ public class UserTaskServiceImpl implements UserTaskService {
     log.info("Task {} was claimed", taskId);
   }
 
-  private List<TaskDto> getTaskDtoList(String processInstanceId, Pageable page) {
+  private List<UserTaskDto> getTaskDtoList(String processInstanceId, Pageable page) {
     log.debug("Getting assigned to current user or unassigned user tasks of process instance {}. "
         + "Paging and sorting params - {}", processInstanceId, page);
     var unassignedTaskQuery = TaskQueryDto.builder()
@@ -191,13 +181,7 @@ public class UserTaskServiceImpl implements UserTaskService {
         .maxResults(page.getMaxResults())
         .build();
 
-    return camundaTaskRestClient.getTasksByParams(taskQueryDto, paginationQueryDto);
-  }
-
-  private List<String> extractProcessDefinitionIds(List<TaskDto> tasks) {
-    return tasks.stream()
-        .map(TaskDto::getProcessDefinitionId)
-        .collect(Collectors.toList());
+    return extendedUserTaskRestClient.getTasksByParams(taskQueryDto, paginationQueryDto);
   }
 
   private void verifyOfficerFormData(FormDataDto formData) {
