@@ -73,7 +73,7 @@ public class RestExceptionHandler {
         .code(ex.getCause().getCode())
         .localizedMessage(localizedMessage)
         .build();
-
+    log.error("User task not exists", ex);
     return new ResponseEntity<>(systemErrorDto, ex.getCause().getHttpStatus());
   }
 
@@ -89,7 +89,7 @@ public class RestExceptionHandler {
         .code(String.valueOf(HttpStatus.FORBIDDEN.value()))
         .localizedMessage(localizedMessage)
         .build();
-
+    log.warn("User does not have permission for task", ex);
     return new ResponseEntity<>(systemErrorDto, HttpStatus.FORBIDDEN);
   }
 
@@ -113,13 +113,13 @@ public class RestExceptionHandler {
             .code(ex.getCause().getCode())
             .localizedMessage(localizedMessage)
             .build();
-
+    log.error("User task not exists or completed", ex);
     return new ResponseEntity<>(systemErrorDto, HttpStatus.NOT_FOUND);
   }
 
   /**
-   * Catching {@link UserTaskNotExistsOrCompletedException} exception and return localized response
-   * about task that is already assigned to other user
+   * Catching {@link UserTaskAlreadyAssignedException} exception and return localized response about
+   * task that is already assigned to other user
    *
    * @param ex caught exception
    * @return response entity with localized response
@@ -138,7 +138,7 @@ public class RestExceptionHandler {
             .code(String.valueOf(HttpStatus.CONFLICT))
             .localizedMessage(localizedMessage)
             .build();
-
+    log.error("User task already assigned", ex);
     return new ResponseEntity<>(systemErrorDto, HttpStatus.CONFLICT);
   }
 }
