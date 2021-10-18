@@ -65,7 +65,7 @@ logbook:
     enabled: true
   info-logging:
     enabled: true
-  strategy: request-body-on-debug
+  strategy: without-body
   exclude:
     - /user-task-management/v3/api-docs/**
     - /user-task-management/swagger-ui/**

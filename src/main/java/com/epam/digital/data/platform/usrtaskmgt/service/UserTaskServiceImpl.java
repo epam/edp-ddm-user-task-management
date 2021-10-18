@@ -83,7 +83,7 @@ public class UserTaskServiceImpl implements UserTaskService {
 
     var data = getFormData(userTaskDto.getProcessInstanceId(), userTaskDto.getTaskDefinitionKey());
     userTaskDto.setData(data);
-    log.trace("Form data pre-population is found. {}", data);
+    log.trace("Form data pre-population is found.");
 
     log.info("Unfinished user task by id {} is found", taskId);
     return userTaskDto;
@@ -168,7 +168,7 @@ public class UserTaskServiceImpl implements UserTaskService {
   }
 
   private void verifyOfficerFormData(FormDataDto formData) {
-    log.debug("Verifying officer signed form data. {}", formData);
+    log.debug("Verifying officer signed form data.");
     var data = serializeFormData(formData.getData());
     var signature = formData.getSignature();
     var verifyResponseDto = digitalSignatureRestClient.verifyOfficer(
@@ -181,7 +181,7 @@ public class UserTaskServiceImpl implements UserTaskService {
   }
 
   private void verifyCitizenFormData(SignableDataUserTaskDto taskDto, FormDataDto formData) {
-    log.debug("Verifying citizen signed form data. {}", formData);
+    log.debug("Verifying citizen signed form data.");
     var data = serializeFormData(formData.getData());
     var signature = formData.getSignature();
     var allowedSubjects = taskDto.getSignatureValidationPack();
@@ -210,13 +210,13 @@ public class UserTaskServiceImpl implements UserTaskService {
 
   private void completeTask(String taskId, FormDataDto formData,
       BiConsumer<SignableDataUserTaskDto, FormDataDto> verifyingConsumer) {
-    log.debug("Completing user task {} with form data {}", taskId, formData);
+    log.debug("Completing user task {}", taskId);
 
     var taskDto = getUserTaskById(taskId);
     log.trace("User task {} was found", taskId);
 
     validateFormData(taskDto.getFormKey(), formData);
-    log.trace("Form data {} has passed the validation", formData);
+    log.trace("Form data has passed the validation");
 
     verifyingConsumer.accept(taskDto, formData);
     log.trace("Form data has passed the signature verification if there was any");
