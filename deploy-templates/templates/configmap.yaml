@@ -9,4 +9,4 @@ data:
     ceph.http-endpoint: {{ .Values.ceph.host }}
     spring.zipkin.baseUrl: http://zipkin.istio-system:9411
     form-management-provider.url: http://form-management-provider:3001
-    server.max-http-header-size: 16KB
+    server.max-http-header-size: 32KB
