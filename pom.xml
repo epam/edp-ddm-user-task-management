@@ -33,7 +33,7 @@
     <sonar.coverage.exclusions>
       **/com/epam/digital/data/platform/usrtaskmgt/config/**/*,
       **/com/epam/digital/data/platform/usrtaskmgt/mapper/**/*,
-      **/com/epam/digital/data/platform/usrtaskmgt/dto/**/*,
+      **/com/epam/digital/data/platform/usrtaskmgt/model/**/*,
       **/UserTaskManagementApplication.java
       **/docs/**/*
     </sonar.coverage.exclusions>
