@@ -255,7 +255,7 @@ public class UserTaskServiceImpl implements UserTaskService {
       String taskId) {
     var formVariablesProperties = taskProperties.get(FORM_VARIABLES_PROPERTY);
     if (Objects.isNull(formVariablesProperties)) {
-      return null;
+      return Map.of();
     }
 
     var formVariableNames = List.of(formVariablesProperties.split(FORM_VARIABLES_REGEX));
