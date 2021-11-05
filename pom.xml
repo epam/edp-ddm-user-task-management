@@ -210,6 +210,7 @@
           <baseClassForTests>
             com.epam.digital.data.platform.usrtaskmgt.controller.BaseControllerTest
           </baseClassForTests>
+          <testFramework>JUNIT5</testFramework>
         </configuration>
       </plugin>
 

@@ -8,7 +8,6 @@ import com.epam.digital.data.platform.bpms.api.dto.TaskQueryDto;
 import com.epam.digital.data.platform.bpms.api.dto.UserTaskDto;
 import com.epam.digital.data.platform.bpms.client.CamundaTaskRestClient;
 import com.epam.digital.data.platform.bpms.client.ExtendedUserTaskRestClient;
-import com.epam.digital.data.platform.bpms.client.TaskPropertyRestClient;
 import com.epam.digital.data.platform.bpms.client.exception.TaskNotFoundException;
 import com.epam.digital.data.platform.dso.api.dto.Subject;
 import com.epam.digital.data.platform.dso.api.dto.VerificationRequestDto;
@@ -26,20 +25,18 @@ import com.epam.digital.data.platform.usrtaskmgt.exception.UserTaskNotExistsExce
 import com.epam.digital.data.platform.usrtaskmgt.exception.UserTaskNotExistsOrCompletedException;
 import com.epam.digital.data.platform.usrtaskmgt.mapper.UserTaskDtoMapper;
 import com.epam.digital.data.platform.usrtaskmgt.model.Pageable;
-import com.epam.digital.data.platform.usrtaskmgt.model.SignableUserTaskDto;
+import com.epam.digital.data.platform.usrtaskmgt.model.SignableDataUserTaskDto;
 import com.epam.digital.data.platform.usrtaskmgt.util.AuthUtil;
 import com.epam.digital.data.platform.usrtaskmgt.util.CephKeyProvider;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.util.Arrays;
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.BiConsumer;
-import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.camunda.bpm.engine.rest.dto.CountResultDto;
@@ -54,13 +51,9 @@ import org.springframework.util.StringUtils;
 public class UserTaskServiceImpl implements UserTaskService {
 
   private static final String USER_TASK_AUTHORIZATION_ERROR_MSG = "The user with username %s does not have permission on resource Task with id %s";
-  private static final String SIGN_PROPERTY = "eSign";
-  private static final String FORM_VARIABLES_PROPERTY = "formVariables";
-  private static final String FORM_VARIABLES_REGEX = "\\s*,\\s*";
 
   private final CamundaTaskRestClient camundaTaskRestClient;
   private final ExtendedUserTaskRestClient extendedUserTaskRestClient;
-  private final TaskPropertyRestClient taskPropertyRestClient;
   private final DigitalSignatureRestClient digitalSignatureRestClient;
 
   private final FormDataCephService cephService;
@@ -76,31 +69,21 @@ public class UserTaskServiceImpl implements UserTaskService {
         processInstanceId, page);
     var tasks = getTaskDtoList(processInstanceId, page);
     log.trace("Found user tasks - {}", tasks);
-
-    log.info("Found {} user tasks. Task ids - {}", tasks.size(),
-        tasks.stream().map(UserTaskDto::getId).collect(Collectors.joining(", ")));
-
+    log.info("Found {} user tasks", tasks.size());
     return tasks;
   }
 
   @Override
-  public SignableUserTaskDto getTaskById(String taskId) {
+  public SignableDataUserTaskDto getTaskById(String taskId) {
     log.info("Getting unfinished user task by id {}", taskId);
 
-    var taskById = getUserTaskById(taskId);
+    var userTaskDto = getUserTaskById(taskId);
     log.trace("Task was found in bpms");
-    verifyAssignee(taskById);
+    verifyAssignee(userTaskDto);
 
-    var userTaskDto = userTaskDtoMapper.toSignableUserTaskDto(taskById);
-
-    var data = getFormData(taskById.getProcessInstanceId(), taskById.getTaskDefinitionKey());
+    var data = getFormData(userTaskDto.getProcessInstanceId(), userTaskDto.getTaskDefinitionKey());
     userTaskDto.setData(data);
     log.trace("Form data pre-population is found. {}", data);
-
-    var taskProperties = getTaskProperties(taskId);
-    userTaskDto.setESign(Boolean.parseBoolean(taskProperties.get(SIGN_PROPERTY)));
-    userTaskDto.setFormVariables(getTaskFormVariables(taskProperties, taskId));
-    log.trace("Found user task - {}", userTaskDto);
 
     log.info("Unfinished user task by id {} is found", taskId);
     return userTaskDto;
@@ -124,7 +107,7 @@ public class UserTaskServiceImpl implements UserTaskService {
   @Override
   public void completeTaskById(String taskId, FormDataDto formData) {
     log.info("Completing user task with id {}", taskId);
-    completeTask(taskId, formData, (id, data) -> {
+    completeTask(taskId, formData, (userTaskDto, data) -> {
     });
     log.info("Task {} is completed", taskId);
   }
@@ -132,7 +115,7 @@ public class UserTaskServiceImpl implements UserTaskService {
   @Override
   public void signOfficerForm(String taskId, FormDataDto formData) {
     log.info("Completing signable officer task with id {}", taskId);
-    completeTask(taskId, formData, (id, data) -> verifyOfficerFormData(data));
+    completeTask(taskId, formData, (taskDto, data) -> verifyOfficerFormData(data));
     log.info("Signable officer task {} is completed", taskId);
   }
 
@@ -197,22 +180,19 @@ public class UserTaskServiceImpl implements UserTaskService {
     log.debug("Officer signed form data verified.");
   }
 
-  private void verifyCitizenFormData(String taskId, FormDataDto formData) {
+  private void verifyCitizenFormData(SignableDataUserTaskDto taskDto, FormDataDto formData) {
     log.debug("Verifying citizen signed form data. {}", formData);
     var data = serializeFormData(formData.getData());
     var signature = formData.getSignature();
-    var taskProperties = taskPropertyRestClient.getTaskProperty(taskId);
-    var allowedSubjects = Arrays.stream(Subject.values())
-        .filter(subject -> Boolean.parseBoolean(taskProperties.get(subject.name())))
-        .collect(Collectors.toList());
+    var allowedSubjects = taskDto.getSignatureValidationPack();
     log.trace("Found subjects - {}", allowedSubjects);
 
     if (allowedSubjects.isEmpty()) {
-      allowedSubjects = Collections.singletonList(Subject.INDIVIDUAL);
+      allowedSubjects = Set.of(Subject.INDIVIDUAL);
     }
 
     var verifyResponseDto = digitalSignatureRestClient.verifyCitizen(
-        new VerifySubjectRequestDto(allowedSubjects, signature, data));
+        new VerifySubjectRequestDto(new ArrayList<>(allowedSubjects), signature, data));
     if (!verifyResponseDto.isValid()) {
       log.error("Citizen task form data hasn't passed the signature verification");
       throw new SignatureValidationException(verifyResponseDto.getError());
@@ -229,7 +209,7 @@ public class UserTaskServiceImpl implements UserTaskService {
   }
 
   private void completeTask(String taskId, FormDataDto formData,
-      BiConsumer<String, FormDataDto> verifyingConsumer) {
+      BiConsumer<SignableDataUserTaskDto, FormDataDto> verifyingConsumer) {
     log.debug("Completing user task {} with form data {}", taskId, formData);
 
     var taskDto = getUserTaskById(taskId);
@@ -238,7 +218,7 @@ public class UserTaskServiceImpl implements UserTaskService {
     validateFormData(taskDto.getFormKey(), formData);
     log.trace("Form data {} has passed the validation", formData);
 
-    verifyingConsumer.accept(taskId, formData);
+    verifyingConsumer.accept(taskDto, formData);
     log.trace("Form data has passed the signature verification if there was any");
 
     verifyAssignee(taskDto);
@@ -251,26 +231,7 @@ public class UserTaskServiceImpl implements UserTaskService {
     log.debug("User task {} successfully completed", taskId);
   }
 
-  private Map<String, Object> getTaskFormVariables(Map<String, String> taskProperties,
-      String taskId) {
-    var formVariablesProperties = taskProperties.get(FORM_VARIABLES_PROPERTY);
-    if (Objects.isNull(formVariablesProperties)) {
-      return Map.of();
-    }
-
-    var formVariableNames = List.of(formVariablesProperties.split(FORM_VARIABLES_REGEX));
-    var allTaskVariables = camundaTaskRestClient.getTaskVariables(taskId);
-
-    return allTaskVariables.entrySet().stream()
-        .filter(entry -> formVariableNames.contains(entry.getKey()))
-        .collect(Collectors.toMap(Entry::getKey, entry -> entry.getValue().getValue()));
-  }
-
-  private Map<String, String> getTaskProperties(String taskId) {
-    return taskPropertyRestClient.getTaskProperty(taskId);
-  }
-
-  private void saveFormData(TaskDto taskDto, FormDataDto fromData) {
+  private void saveFormData(SignableDataUserTaskDto taskDto, FormDataDto fromData) {
     var processInstanceId = taskDto.getProcessInstanceId();
     var taskDefinitionKey = taskDto.getTaskDefinitionKey();
 
@@ -311,15 +272,16 @@ public class UserTaskServiceImpl implements UserTaskService {
     }
   }
 
-  private TaskDto getUserTaskById(String taskId) {
+  private SignableDataUserTaskDto getUserTaskById(String taskId) {
     try {
-      return camundaTaskRestClient.getTaskById(taskId);
+      var userTask = extendedUserTaskRestClient.getUserTaskById(taskId);
+      return userTaskDtoMapper.toSignableDataUserTaskDto(userTask);
     } catch (TaskNotFoundException ex) {
       throw new UserTaskNotExistsException(taskId, ex);
     }
   }
 
-  private void verifyAssignee(TaskDto taskDto) {
+  private void verifyAssignee(SignableDataUserTaskDto taskDto) {
     var assignee = taskDto.getAssignee();
     var currentUserName = AuthUtil.getCurrentUsername();
     if (Objects.isNull(assignee) || !assignee.equals(currentUserName)) {

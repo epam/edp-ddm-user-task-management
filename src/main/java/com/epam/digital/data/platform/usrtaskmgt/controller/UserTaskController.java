@@ -8,7 +8,7 @@ import com.epam.digital.data.platform.starter.security.annotation.PreAuthorizeAn
 import com.epam.digital.data.platform.starter.security.annotation.PreAuthorizeCitizen;
 import com.epam.digital.data.platform.starter.security.annotation.PreAuthorizeOfficer;
 import com.epam.digital.data.platform.usrtaskmgt.model.Pageable;
-import com.epam.digital.data.platform.usrtaskmgt.model.SignableUserTaskDto;
+import com.epam.digital.data.platform.usrtaskmgt.model.SignableDataUserTaskDto;
 import com.epam.digital.data.platform.usrtaskmgt.model.swagger.PageableAsQueryParam;
 import com.epam.digital.data.platform.usrtaskmgt.service.UserTaskService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -51,12 +51,12 @@ public class UserTaskController {
   @ApiResponse(
       description = "Returns task by id",
       responseCode = "200",
-      content = @Content(schema = @Schema(implementation = SignableUserTaskDto.class)))
+      content = @Content(schema = @Schema(implementation = SignableDataUserTaskDto.class)))
   @ApiResponse(
       description = "Task hasn't found",
       responseCode = "404",
       content = @Content(schema = @Schema(implementation = SystemErrorDto.class)))
-  public SignableUserTaskDto getTaskById(@PathVariable("id") String taskId) {
+  public SignableDataUserTaskDto getTaskById(@PathVariable("id") String taskId) {
     return userTaskService.getTaskById(taskId);
   }
 

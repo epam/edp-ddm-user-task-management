@@ -1,49 +1,56 @@
 package com.epam.digital.data.platform.usrtaskmgt.controller;
 
-import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
-import static com.github.tomakehurst.wiremock.client.WireMock.post;
-import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
-import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.equalToJson;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 
 import com.epam.digital.data.platform.bpms.api.dto.HistoryUserTaskDto;
 import com.epam.digital.data.platform.usrtaskmgt.BaseIT;
-import com.fasterxml.jackson.core.JsonProcessingException;
+import com.epam.digital.data.platform.usrtaskmgt.model.StubRequest;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import org.camunda.bpm.engine.rest.dto.CountResultDto;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
-import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
-public class HistoryUserTaskControllerIT extends BaseIT {
+class HistoryUserTaskControllerIT extends BaseIT {
 
   @Test
-  public void shouldGetHistoryTasks() {
-    MockHttpServletRequestBuilder request = get("/api/history/task?finished=true")
+  void shouldGetHistoryTasks() {
+    mockBpmsRequest(StubRequest.builder()
+        .method(HttpMethod.POST)
+        .path("/api/extended/history/task")
+        .requestBody(equalToJson("{\"taskAssignee\": \"testuser\", \"finished\": true}"))
+        .status(200)
+        .responseBody("[{\"id\":\"testHistoryId\"}]")
+        .responseHeaders(Map.of("Content-Type", List.of("application/json")))
+        .build());
+
+    var request = get("/api/history/task?finished=true")
         .accept(MediaType.APPLICATION_JSON_VALUE);
 
-    List<HistoryUserTaskDto> historyUserTaskDtos = Arrays
-        .asList(performForObject(request, HistoryUserTaskDto[].class));
+    var historyUserTaskDtos = Arrays
+        .asList(performForObjectAsOfficer(request, HistoryUserTaskDto[].class));
 
     assertThat(historyUserTaskDtos.size()).isOne();
     assertThat(historyUserTaskDtos.get(0).getId()).isEqualTo("testHistoryId");
   }
 
   @Test
-  public void shouldCountHistoryTasks() throws JsonProcessingException {
-    bpmServer.addStubMapping(
-        stubFor(post(urlPathEqualTo("/api/history/task/count"))
-            .willReturn(aResponse()
-                .withHeader("Content-Type", "application/json")
-                .withStatus(200)
-                .withBody(objectMapper.writeValueAsString(new CountResultDto(11L))))
-        )
-    );
+  void shouldCountHistoryTasks() {
+    var testTaskCount = 11L;
+    mockBpmsRequest(StubRequest.builder()
+        .method(HttpMethod.POST)
+        .path("/api/history/task/count")
+        .status(200)
+        .responseBody(String.format("{\"count\":%d}", testTaskCount))
+        .responseHeaders(Map.of("Content-Type", List.of("application/json")))
+        .build());
 
     var request = get("/api/history/task/count").accept(MediaType.APPLICATION_JSON_VALUE);
-    var count = performForObject(request, CountResultDto.class);
+    var count = performForObjectAsOfficer(request, CountResultDto.class);
 
     assertThat(count).isNotNull();
     assertThat(count.getCount()).isEqualTo(testTaskCount);

@@ -6,7 +6,7 @@ import com.epam.digital.data.platform.usrtaskmgt.exception.SignatureValidationEx
 import com.epam.digital.data.platform.usrtaskmgt.exception.UserTaskAlreadyAssignedException;
 import com.epam.digital.data.platform.usrtaskmgt.exception.UserTaskNotExistsOrCompletedException;
 import com.epam.digital.data.platform.usrtaskmgt.model.Pageable;
-import com.epam.digital.data.platform.usrtaskmgt.model.SignableUserTaskDto;
+import com.epam.digital.data.platform.usrtaskmgt.model.SignableDataUserTaskDto;
 import java.util.List;
 import org.camunda.bpm.engine.rest.dto.CountResultDto;
 
@@ -32,7 +32,7 @@ public interface UserTaskService {
    * @param taskId task identifier
    * @return the user task entity that can be signed
    */
-  SignableUserTaskDto getTaskById(String taskId);
+  SignableDataUserTaskDto getTaskById(String taskId);
 
   /**
    * Method for getting the number of tasks.
