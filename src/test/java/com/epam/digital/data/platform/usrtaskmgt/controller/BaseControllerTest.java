@@ -14,7 +14,7 @@ import com.epam.digital.data.platform.usrtaskmgt.enums.UserTaskManagementMessage
 import com.epam.digital.data.platform.usrtaskmgt.exception.UserTaskAlreadyAssignedException;
 import com.epam.digital.data.platform.usrtaskmgt.exception.UserTaskNotExistsOrCompletedException;
 import com.epam.digital.data.platform.usrtaskmgt.model.Pageable;
-import com.epam.digital.data.platform.usrtaskmgt.model.SignableUserTaskDto;
+import com.epam.digital.data.platform.usrtaskmgt.model.SignableDataUserTaskDto;
 import com.epam.digital.data.platform.usrtaskmgt.service.HistoryUserTaskService;
 import com.epam.digital.data.platform.usrtaskmgt.service.UserTaskService;
 import com.google.common.collect.ImmutableMap;
@@ -22,16 +22,17 @@ import io.restassured.module.mockmvc.RestAssuredMockMvc;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.Set;
 import org.assertj.core.util.Lists;
 import org.camunda.bpm.engine.rest.dto.CountResultDto;
-import org.junit.Before;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.slf4j.MDC;
 
-@RunWith(MockitoJUnitRunner.class)
+@ExtendWith(MockitoExtension.class)
 public abstract class BaseControllerTest {
 
   @InjectMocks
@@ -46,7 +47,7 @@ public abstract class BaseControllerTest {
   @Mock
   private MessageResolver messageResolver;
 
-  @Before
+  @BeforeEach
   public void init() {
     MDC.put(BaseRestExceptionHandler.TRACE_ID_KEY, "traceId");
 
@@ -67,21 +68,23 @@ public abstract class BaseControllerTest {
   }
 
   public void mockGetById() {
-    var taskById = new SignableUserTaskDto("testId", "testTaskName", "testAssignee",
-        LocalDateTime.of(LocalDate.of(2020, 12, 12), LocalTime.of(13, 3, 22)), "testDesc",
-        "testProcessInstanceId", "testProcessDefinitionId",
-        "testFormKey", true, ImmutableMap.of("var1", 123123), true, ImmutableMap.of("fullName", "FullName"));
+    var taskById = new SignableDataUserTaskDto("testId", "taskDefinitionKey", "testTaskName",
+        "testAssignee", LocalDateTime.of(LocalDate.of(2020, 12, 12), LocalTime.of(13, 3, 22)),
+        "testDesc", "testProcessInstanceId", "testProcessDefinitionId", "testProcess",
+        "testFormKey", true, ImmutableMap.of("var1", 123123), true,
+        ImmutableMap.of("fullName", "FullName"), Set.of());
 
     lenient().when(userTaskService.getTaskById("testId")).thenReturn(taskById);
   }
 
   public void mockGetTasks() {
     lenient().when(userTaskService.getTasks(null, Pageable.builder().build()))
-        .thenReturn(Lists.newArrayList(new UserTaskDto("testId", "testTaskName", "testAssignee",
+        .thenReturn(Lists.newArrayList(
+            new UserTaskDto("testId", "taskDefinitionKey", "testTaskName", "testAssignee",
                 LocalDateTime.of(LocalDate.of(2020, 12, 12), LocalTime.of(13, 3, 22)), "testDesc",
                 "testProcessDefinitionName", "testProcessInstanceId", "testProcessDefinitionId",
                 "testFormKey", false),
-            new UserTaskDto("testId2", "testTaskName2", "testAssignee2",
+            new UserTaskDto("testId2", "taskDefinitionKey", "testTaskName2", "testAssignee2",
                 LocalDateTime.of(LocalDate.of(2020, 12, 12), LocalTime.of(13, 3, 22)), "testDesc2",
                 "testProcessDefinitionName2", "testProcessInstanceId2", "testProcessDefinitionId2",
                 "testFormKey2", true)));
@@ -89,10 +92,11 @@ public abstract class BaseControllerTest {
 
   public void mockGetTasksByProcessInstanceId() {
     lenient().when(userTaskService.getTasks("testProcessInstanceId", Pageable.builder().build()))
-        .thenReturn(Lists.newArrayList(new UserTaskDto("testId", "testTaskName", "testAssignee",
-            LocalDateTime.of(LocalDate.of(2020, 12, 12), LocalTime.of(13, 3, 22)), "testDesc",
-            "testProcessDefinitionName", "testProcessInstanceId", "testProcessDefinitionId",
-            "testFormKey", false)));
+        .thenReturn(Lists.newArrayList(
+            new UserTaskDto("testId", "taskDefinitionKey", "testTaskName", "testAssignee",
+                LocalDateTime.of(LocalDate.of(2020, 12, 12), LocalTime.of(13, 3, 22)), "testDesc",
+                "testProcessDefinitionName", "testProcessInstanceId", "testProcessDefinitionId",
+                "testFormKey", false)));
   }
 
   public void mockGetHistoryTasks() {

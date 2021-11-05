@@ -1,192 +1,190 @@
 package com.epam.digital.data.platform.usrtaskmgt.controller;
 
-import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
-import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
-import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
-import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
-import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.equalToJson;
+import static com.github.tomakehurst.wiremock.client.WireMock.matchingJsonPath;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.epam.digital.data.platform.bpms.api.dto.SortingDto;
-import com.epam.digital.data.platform.bpms.api.dto.TaskQueryDto;
 import com.epam.digital.data.platform.bpms.api.dto.UserTaskDto;
-import com.epam.digital.data.platform.dso.api.dto.ErrorDto;
-import com.epam.digital.data.platform.dso.api.dto.Subject;
-import com.epam.digital.data.platform.dso.api.dto.VerificationResponseDto;
-import com.epam.digital.data.platform.dso.api.dto.VerifySubjectRequestDto;
-import com.epam.digital.data.platform.dso.api.dto.VerifySubjectResponseDto;
-import com.epam.digital.data.platform.starter.errorhandling.dto.ErrorDetailDto;
-import com.epam.digital.data.platform.starter.errorhandling.dto.ErrorsListDto;
 import com.epam.digital.data.platform.starter.errorhandling.dto.SystemErrorDto;
 import com.epam.digital.data.platform.starter.errorhandling.dto.ValidationErrorDto;
 import com.epam.digital.data.platform.usrtaskmgt.BaseIT;
-import com.epam.digital.data.platform.usrtaskmgt.model.SignableUserTaskDto;
-import com.github.tomakehurst.wiremock.client.WireMock;
-import java.nio.charset.StandardCharsets;
+import com.epam.digital.data.platform.usrtaskmgt.model.SignableDataUserTaskDto;
+import com.epam.digital.data.platform.usrtaskmgt.model.StubRequest;
+import java.time.LocalDateTime;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import lombok.SneakyThrows;
-import org.assertj.core.util.Lists;
-import org.camunda.bpm.engine.impl.persistence.entity.TaskEntity;
+import java.util.Map;
+import java.util.Set;
 import org.camunda.bpm.engine.rest.dto.CountResultDto;
-import org.camunda.bpm.engine.rest.dto.task.TaskDto;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
-import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
-public class UserTaskControllerIT extends BaseIT {
+class UserTaskControllerIT extends BaseIT {
+
+  private static final String TASK_ID = "testTaskId";
 
   @Test
-  public void shouldCountTasks() {
-    MockHttpServletRequestBuilder request = get("/api/task/count")
-        .accept(MediaType.APPLICATION_JSON_VALUE);
-    CountResultDto count = performForObject(request, CountResultDto.class);
+  void shouldCountTasks() {
+    final var testTaskCount = 11L;
 
-    assertThat(count).isNotNull();
-    assertThat(count.getCount()).isEqualTo(testTaskCount);
+    mockBpmsGetTaskCount(200, String.format("{\"count\":%d}", testTaskCount));
+
+    var request = get("/api/task/count")
+        .accept(MediaType.APPLICATION_JSON_VALUE);
+    var result = performForObjectAsOfficer(request, CountResultDto.class);
+
+    assertThat(result).isNotNull()
+        .extracting(CountResultDto::getCount).isEqualTo(testTaskCount);
   }
 
   @Test
-  public void shouldCountTasks_badRequest() throws Exception {
-    mockTaskCountFail(400, "{\"message\":\"Bad request\"}");
+  void shouldCountTasks_badRequest() throws Exception {
+    mockBpmsGetTaskCount(400, "{\"message\":\"Bad request\"}");
 
-    MockHttpServletRequestBuilder request = get("/api/task/count")
+    var request = get("/api/task/count")
         .accept(MediaType.APPLICATION_JSON_VALUE);
     performWithTokenOfficerRole(request).andExpect(status().isBadRequest());
   }
 
   @Test
-  public void shouldCountTasks_unauthorized() throws Exception {
-    mockTaskCountFail(401, "{\"message\":\"Unauthorized\"}");
+  void shouldCountTasks_unauthorized() throws Exception {
+    mockBpmsGetTaskCount(401, "{\"message\":\"Unauthorized\"}");
 
-    MockHttpServletRequestBuilder request = get("/api/task/count")
+    var request = get("/api/task/count")
         .accept(MediaType.APPLICATION_JSON_VALUE);
     performWithTokenOfficerRole(request).andExpect(status().isUnauthorized());
   }
 
   @Test
-  public void shouldGetTasks() {
-    MockHttpServletRequestBuilder request = get("/api/task")
+  void shouldGetTasks() {
+    mockBpmsRequest(StubRequest.builder()
+        .path("/api/extended/task")
+        .method(HttpMethod.POST)
+        .status(200)
+        .responseBody(fileContent("/json/getTasksResponse.json"))
+        .responseHeaders(Map.of("Content-Type", List.of("application/json")))
+        .build());
+
+    var request = get("/api/task")
         .accept(MediaType.APPLICATION_JSON_VALUE);
-    List<UserTaskDto> userTaskDtos = Arrays
-        .asList(performForObject(request, UserTaskDto[].class));
+    var userTaskDtos = Arrays.asList(performForObjectAsOfficer(request, UserTaskDto[].class));
 
     assertThat(userTaskDtos).hasSize(2);
-    userTaskDtos.forEach(t -> {
-      assertThat(t.getId()).isNotEmpty();
-      assertThat(t.getProcessDefinitionName()).isNotEmpty();
-    });
-    assertThat(userTaskDtos.get(0).isSuspended()).isFalse();
-    assertThat(userTaskDtos.get(1).isSuspended()).isTrue();
+    assertThat(userTaskDtos.get(0))
+        .hasFieldOrPropertyWithValue("id", "task1")
+        .hasFieldOrPropertyWithValue("processDefinitionId", "pdId1")
+        .hasFieldOrPropertyWithValue("processDefinitionName", "testName")
+        .hasFieldOrPropertyWithValue("suspended", false);
+    assertThat(userTaskDtos.get(1))
+        .hasFieldOrPropertyWithValue("id", "task2")
+        .hasFieldOrPropertyWithValue("processDefinitionId", "pdId2")
+        .hasFieldOrPropertyWithValue("processDefinitionName", "testName")
+        .hasFieldOrPropertyWithValue("suspended", true);
   }
 
   @Test
-  public void shouldGetTaskById_noSecureVarRefTaskFormData() {
-    mockTaskByIdAndProcessDefinitionId(testTaskId, processDefinitionId1);
-    mockGetTaskVariables(testTaskId);
+  void shouldGetTaskById_noCephConnection() {
+    mockGetExtendedTask(fileContent("/json/getSignableTaskWithFormVariablesResponse.json"));
 
-    MockHttpServletRequestBuilder request = get("/api/task/" + testTaskId)
+    var request = get("/api/task/" + TASK_ID)
         .accept(MediaType.APPLICATION_JSON_VALUE);
-    var taskById = performForObject(request, SignableUserTaskDto.class);
+    var taskById = performForObjectAsOfficer(request, SignableDataUserTaskDto.class);
 
-    assertThat(taskById).isNotNull();
-    assertThat(taskById.getId()).isEqualTo(testTaskId);
-    assertThat(taskById.getData()).isNull();
-    assertThat(taskById.isESign()).isTrue();
-    assertThat(taskById.getFormVariables()).containsEntry("fullName", "Test Full Name");
+    assertThat(taskById).isNotNull()
+        .hasFieldOrPropertyWithValue("id", TASK_ID)
+        .hasFieldOrPropertyWithValue("data", null)
+        .hasFieldOrPropertyWithValue("eSign", true)
+        .hasFieldOrPropertyWithValue("processDefinitionId", "pdId1")
+        .hasFieldOrPropertyWithValue("processDefinitionName", "testPDName")
+        .hasFieldOrPropertyWithValue("processInstanceId", "processInstanceId")
+        .hasFieldOrPropertyWithValue("taskDefinitionKey", "taskDefinitionKey")
+        .hasFieldOrPropertyWithValue("created",
+            LocalDateTime.of(2021, 2, 10, 13, 55, 10, 123000000))
+        .hasFieldOrPropertyWithValue("formKey", "testFormKey")
+        .hasFieldOrPropertyWithValue("assignee", "testuser")
+        .hasFieldOrPropertyWithValue("signatureValidationPack", Set.of())
+        .hasFieldOrPropertyWithValue("formVariables", Map.of("fullName", "Test Full Name"));
   }
 
   @Test
-  public void shouldGetTaskById_noCephConnection() {
+  void shouldGetTaskById_validForm() {
+    mockGetExtendedTask(fileContent("/json/getSignableTaskWithFormVariablesResponse.json"));
+
     var taskDefinitionKey = "taskDefinitionKey";
     var processInstanceId = "processInstanceId";
-
-    mockTaskByParams(testTaskId, processDefinitionId1, processInstanceId, taskDefinitionKey);
-    mockGetTaskVariables(testTaskId);
-
-    MockHttpServletRequestBuilder request = get("/api/task/" + testTaskId)
-        .accept(MediaType.APPLICATION_JSON_VALUE);
-    var taskById = performForObject(request, SignableUserTaskDto.class);
-
-    assertThat(taskById).isNotNull();
-    assertThat(taskById.getId()).isEqualTo(testTaskId);
-    assertThat(taskById.getData()).isNull();
-    assertThat(taskById.isESign()).isTrue();
-    assertThat(taskById.getFormVariables()).containsEntry("fullName", "Test Full Name");
-  }
-
-  @Test
-  public void shouldGetTaskById_validForm() {
-    var taskDefinitionKey = "taskDefinitionKey";
-    var processInstanceId = "processInstanceId";
-
     var cephKey = cephKeyProvider.generateKey(taskDefinitionKey, processInstanceId);
-
-    mockTaskByParams(testTaskId, processDefinitionId1, processInstanceId, taskDefinitionKey);
     mockGetCephContent(cephKey, "{\"data\" : {\"field1\": \"fieldValue1\"}}");
-    mockGetTaskVariables(testTaskId);
 
-    MockHttpServletRequestBuilder request = get("/api/task/" + testTaskId)
+    var request = get("/api/task/" + TASK_ID)
         .accept(MediaType.APPLICATION_JSON_VALUE);
-    var taskById = performForObject(request, SignableUserTaskDto.class);
+    var taskById = performForObjectAsOfficer(request, SignableDataUserTaskDto.class);
 
-    assertThat(taskById).isNotNull();
-    assertThat(taskById.getId()).isEqualTo(testTaskId);
-    assertThat(taskById.getData()).isNotNull();
-    assertThat(taskById.getData()).hasSize(1);
-    assertThat(taskById.getData()).containsEntry("field1", "fieldValue1");
-    assertThat(taskById.getFormVariables()).containsEntry("fullName", "Test Full Name");
+    assertThat(taskById).isNotNull()
+        .hasFieldOrPropertyWithValue("id", TASK_ID)
+        .hasFieldOrPropertyWithValue("data", Map.of("field1", "fieldValue1"))
+        .hasFieldOrPropertyWithValue("eSign", true)
+        .hasFieldOrPropertyWithValue("processDefinitionId", "pdId1")
+        .hasFieldOrPropertyWithValue("processDefinitionName", "testPDName")
+        .hasFieldOrPropertyWithValue("processInstanceId", "processInstanceId")
+        .hasFieldOrPropertyWithValue("taskDefinitionKey", "taskDefinitionKey")
+        .hasFieldOrPropertyWithValue("created",
+            LocalDateTime.of(2021, 2, 10, 13, 55, 10, 123000000))
+        .hasFieldOrPropertyWithValue("formKey", "testFormKey")
+        .hasFieldOrPropertyWithValue("assignee", "testuser")
+        .hasFieldOrPropertyWithValue("signatureValidationPack", Set.of())
+        .hasFieldOrPropertyWithValue("formVariables", Map.of("fullName", "Test Full Name"));
   }
 
   @Test
-  public void shouldReturn404WhenTaskNotFound() throws Exception {
-    MockHttpServletRequestBuilder request = get("/api/task/random")
+  void shouldReturn404WhenTaskNotFound() {
+    var request = get("/api/task/random")
         .accept(MediaType.APPLICATION_JSON_VALUE);
 
-    var result = performWithTokenOfficerRole(request).andExpect(status().isNotFound()).andReturn();
+    var result = performForObjectAsOfficerWithStatus(request, SystemErrorDto.class,
+        status().isNotFound());
 
-    var resultBody = objectMapper
-        .readValue(result.getResponse().getContentAsString(StandardCharsets.UTF_8),
-            SystemErrorDto.class);
-
-    assertThat(resultBody.getLocalizedMessage()).isEqualTo("Задачі з id random не існує");
+    assertThat(result.getLocalizedMessage()).isEqualTo("Задачі з id random не існує");
   }
 
   @Test
-  public void shouldReturn403WhenUserRoleIsEmpty() throws Exception {
-    MockHttpServletRequestBuilder request = get("/api/task/testIdForTokenWithoutRole")
+  void shouldReturn403WhenUserRoleIsEmpty() throws Exception {
+    var request = get("/api/task/testIdForTokenWithoutRole")
         .accept(MediaType.APPLICATION_JSON_VALUE);
 
     performWithTokenWithoutRole(request).andExpect(status().is4xxClientError());
   }
 
   @Test
-  public void shouldCompleteTaskById_noCephConnection() throws Exception {
-    mockTaskByIdAndProcessDefinitionId(testTaskId, processDefinitionId1);
+  void shouldNotCompleteTaskByIdWhenNoCephConnection() throws Exception {
+    mockGetExtendedTask(fileContent("/json/getSignableTaskWithFormVariablesResponse.json"));
 
-    MockHttpServletRequestBuilder request = post("/api/task/" + testTaskId + "/complete")
+    var request = post("/api/task/" + TASK_ID + "/complete")
         .accept(MediaType.APPLICATION_JSON_VALUE).contentType("application/json").content("{}");
 
     performWithTokenOfficerRole(request).andExpect(status().is5xxServerError());
   }
 
   @Test
-  public void shouldCompleteTaskById() throws Exception {
-    var processInstanceId = "processInstance";
-    var taskDefinitionKey = "taskDefinition";
-    var cephKey = cephKeyProvider.generateKey(taskDefinitionKey,processInstanceId);
-    var payload = "{\"data\":{},\"x-access-token\":\"" + tokenConfig.getValueWithRoleOfficer() + "\"}";
+  void shouldCompleteTaskById() throws Exception {
+    mockGetExtendedTask(fileContent("/json/getSignableTaskWithFormVariablesResponse.json"));
 
-    mockTaskByParams(testTaskId, processDefinitionId1, processInstanceId, taskDefinitionKey);
+    var processInstanceId = "processInstanceId";
+    var taskDefinitionKey = "taskDefinitionKey";
+    var cephKey = cephKeyProvider.generateKey(taskDefinitionKey, processInstanceId);
+    var token = tokenConfig.getValueWithRoleOfficer();
+    var payload = String.format("{\"data\":{},\"x-access-token\":\"%s\"}", token);
     mockPutCephContent(cephKey, payload);
-    mockGetForm();
 
-    MockHttpServletRequestBuilder request = post("/api/task/" + testTaskId + "/complete")
+    mockGetForm();
+    mockValidationFormData("{}");
+
+    mockCompleteTask(200, "{}");
+
+    var request = post("/api/task/" + TASK_ID + "/complete")
         .accept(MediaType.APPLICATION_JSON_VALUE).contentType("application/json")
         .content(payload);
 
@@ -194,23 +192,24 @@ public class UserTaskControllerIT extends BaseIT {
   }
 
   @Test
-  public void shouldSignOfficerForm() throws Exception {
-    var processInstanceId = "processInstance";
-    var taskDefinitionKey = "taskDefinition";
-    var cephKey = cephKeyProvider.generateKey(taskDefinitionKey,processInstanceId);
-    var payload =
-        "{\"data\":{},\"signature\":\"eSign\",\"x-access-token\":\"" + tokenConfig.getValueWithRoleOfficer() + "\"}";
+  void shouldSignOfficerForm() throws Exception {
+    mockGetExtendedTask(fileContent("/json/getSignableTaskWithFormVariablesResponse.json"));
 
-    mockTaskByParams(testTaskId, processDefinitionId1, processInstanceId, taskDefinitionKey);
+    var processInstanceId = "processInstanceId";
+    var taskDefinitionKey = "taskDefinitionKey";
+    var cephKey = cephKeyProvider.generateKey(taskDefinitionKey, processInstanceId);
+    var token = tokenConfig.getValueWithRoleOfficer();
+    var payload = String.format("{\"data\":{},\"x-access-token\":\"%s\"}", token);
     mockPutCephContent(cephKey, payload);
-    mockValidationFormData(payload);
+
     mockGetForm();
+    mockValidationFormData("{}");
 
-    var verifyResponseDto = new VerificationResponseDto();
-    verifyResponseDto.setValid(true);
-    mockOfficerDigitalSignature(200, verifyResponseDto);
+    mockOfficerDigitalSignature(200, "{\"valid\":true}");
 
-    MockHttpServletRequestBuilder request = post("/api/officer/task/" + testTaskId + "/sign-form")
+    mockCompleteTask(200, "{}");
+
+    var request = post("/api/officer/task/" + TASK_ID + "/sign-form")
         .accept(MediaType.APPLICATION_JSON_VALUE).contentType("application/json")
         .content(payload);
 
@@ -218,52 +217,52 @@ public class UserTaskControllerIT extends BaseIT {
   }
 
   @Test
-  public void shouldFailOnSignOfficerForm() throws Exception {
-    var processInstanceId = "processInstance";
-    var taskDefinitionKey = "taskDefinition";
-    var cephKey = cephKeyProvider.generateKey(taskDefinitionKey,processInstanceId);
-    var payload = "{\"data\":{},\"signature\":\"eSign\"}";
+  void shouldFailOnSignOfficerForm() {
+    mockGetExtendedTask(fileContent("/json/getSignableTaskWithFormVariablesResponse.json"));
 
-    mockTaskByParams(testTaskId, processDefinitionId1, processInstanceId, taskDefinitionKey);
+    var processInstanceId = "processInstanceId";
+    var taskDefinitionKey = "taskDefinitionKey";
+    var cephKey = cephKeyProvider.generateKey(taskDefinitionKey, processInstanceId);
+    var token = tokenConfig.getValueWithRoleOfficer();
+    var payload = String.format("{\"data\":{},\"x-access-token\":\"%s\"}", token);
     mockPutCephContent(cephKey, payload);
+
     mockGetForm();
+    mockValidationFormData("{}");
 
-    var verifyResponseDto = new VerificationResponseDto();
-    verifyResponseDto.setValid(false);
-    verifyResponseDto.setError(ErrorDto.builder().localizedMessage("message").build());
+    mockOfficerDigitalSignature(200,
+        "{\"valid\":false,\"error\":{\"localizedMessage\":\"message\"}}");
 
-    mockOfficerDigitalSignature(200, verifyResponseDto);
-
-    var request = post("/api/officer/task/" + testTaskId + "/sign-form")
+    var request = post("/api/officer/task/" + TASK_ID + "/sign-form")
         .accept(MediaType.APPLICATION_JSON_VALUE).contentType("application/json")
         .content(payload);
 
-    var result = performWithTokenOfficerRole(request).andExpect(status().isUnprocessableEntity()).andReturn();
-    var response = result.getResponse().getContentAsString();
-    var responseTree = objectMapper.readTree(response);
-    assertThat(
-        responseTree.get("details").get("errors").get(0).get("message")
-            .asText()).isEqualTo("message");
+    var result = performForObjectAsOfficerWithStatus(request, ValidationErrorDto.class,
+        status().isUnprocessableEntity());
+    assertThat(result.getDetails().getErrors().get(0).getMessage()).isEqualTo("message");
   }
 
   @Test
-  public void shouldSignCitizenForm() throws Exception {
-    var processInstanceId = "processInstance";
-    var taskDefinitionKey = "taskDefinition";
-    var cephKey = cephKeyProvider.generateKey(taskDefinitionKey,processInstanceId);
-    var payload =
-        "{\"data\":{},\"signature\":\"eSign\",\"x-access-token\":\"" + tokenConfig.getValueWithRoleCitizen() + "\"}";
+  void shouldSignCitizenForm() throws Exception {
+    mockGetExtendedTask(fileContent("/json/getSignableTaskWithValidationPack.json"));
 
-    mockTaskByParams(testTaskId, processDefinitionId1, processInstanceId, taskDefinitionKey);
+    var processInstanceId = "processInstanceId";
+    var taskDefinitionKey = "taskDefinitionKey";
+    var cephKey = cephKeyProvider.generateKey(taskDefinitionKey, processInstanceId);
+    var token = tokenConfig.getValueWithRoleCitizen();
+    var payload = String.format("{\"data\":{},\"x-access-token\":\"%s\"}", token);
     mockPutCephContent(cephKey, payload);
-    mockValidationFormData(payload);
+
     mockGetForm();
+    mockValidationFormData("{}");
 
-    var verifyResponseDto = new VerifySubjectResponseDto();
-    verifyResponseDto.setValid(true);
-    mockCitizenDigitalSignature(200, verifyResponseDto);
+    var requestBody = matchingJsonPath("$.allowedSubjects",
+        equalToJson("[\"ENTREPRENEUR\"]"));
+    mockCitizenDigitalSignature(requestBody, 200, "{\"valid\":true}");
 
-    MockHttpServletRequestBuilder request = post("/api/citizen/task/" + testTaskId + "/sign-form")
+    mockCompleteTask(200, "{}");
+
+    var request = post("/api/citizen/task/" + TASK_ID + "/sign-form")
         .accept(MediaType.APPLICATION_JSON_VALUE).contentType("application/json")
         .content(payload);
 
@@ -271,46 +270,26 @@ public class UserTaskControllerIT extends BaseIT {
   }
 
   @Test
-  public void shouldSignCitizenFormAsCitizenIfNoValidations() throws Exception {
-    var processInstanceId = "processInstance";
-    var taskDefinitionKey = "taskDefinition";
+  void shouldSignCitizenFormAsIndividualIfNoValidations() throws Exception {
+    mockGetExtendedTask(fileContent("/json/getSignableTaskWithFormVariablesResponse.json"));
+
+    var processInstanceId = "processInstanceId";
+    var taskDefinitionKey = "taskDefinitionKey";
     var cephKey = cephKeyProvider.generateKey(taskDefinitionKey, processInstanceId);
-    var payload =
-        "{\"data\":{},\"signature\":\"eSign\",\"x-access-token\":\"" + tokenConfig
-            .getValueWithRoleCitizen() + "\"}";
-
-    mockTaskByParams(testTaskId, processDefinitionId1, processInstanceId, taskDefinitionKey);
+    var token = tokenConfig.getValueWithRoleCitizen();
+    var payload = String.format("{\"data\":{},\"x-access-token\":\"%s\"}", token);
     mockPutCephContent(cephKey, payload);
-    mockValidationFormData(payload);
+
     mockGetForm();
+    mockValidationFormData("{}");
 
-    var properties = new HashMap<>();
-    properties.put("eSign", "true");
-    bpmServer.addStubMapping(
-        stubFor(WireMock
-            .get(urlPathEqualTo("/api/extended/task/" + testTaskId + "/extension-element/property"))
-            .willReturn(aResponse()
-                .withHeader("Content-Type", "application/json")
-                .withStatus(200)
-                .withBody(objectMapper.writeValueAsString(properties)))
-        )
-    );
+    var requestBody = matchingJsonPath("$.allowedSubjects",
+        equalToJson("[\"INDIVIDUAL\"]"));
+    mockCitizenDigitalSignature(requestBody, 200, "{\"valid\":true}");
 
-    var verifyResponseDto = new VerifySubjectResponseDto();
-    verifyResponseDto.setValid(true);
-    dsoServer.addStubMapping(
-        stubFor(WireMock.post(urlPathEqualTo("/api/esignature/citizen/verify"))
-            .withRequestBody(equalTo(objectMapper.writeValueAsString(
-                new VerifySubjectRequestDto(Collections.singletonList(Subject.INDIVIDUAL), "eSign",
-                    "{}"))))
-            .willReturn(aResponse()
-                .withHeader("Content-Type", "application/json")
-                .withStatus(200)
-                .withBody(objectMapper.writeValueAsString(verifyResponseDto)))
-        )
-    );
+    mockCompleteTask(200, "{}");
 
-    MockHttpServletRequestBuilder request = post("/api/citizen/task/" + testTaskId + "/sign-form")
+    var request = post("/api/citizen/task/" + TASK_ID + "/sign-form")
         .accept(MediaType.APPLICATION_JSON_VALUE).contentType("application/json")
         .content(payload);
 
@@ -318,176 +297,139 @@ public class UserTaskControllerIT extends BaseIT {
   }
 
   @Test
-  public void shouldFailOnSignCitizenForm() throws Exception {
-    var processInstanceId = "processInstance";
-    var taskDefinitionKey = "taskDefinition";
+  void shouldFailOnSignCitizenForm() {
+    mockGetExtendedTask(fileContent("/json/getSignableTaskWithFormVariablesResponse.json"));
+
+    var processInstanceId = "processInstanceId";
+    var taskDefinitionKey = "taskDefinitionKey";
     var cephKey = cephKeyProvider.generateKey(taskDefinitionKey, processInstanceId);
-    var payload = "{\"data\":{},\"signature\":\"eSign\"}";
-
-    mockTaskByParams(testTaskId, processDefinitionId1, processInstanceId, taskDefinitionKey);
+    var token = tokenConfig.getValueWithRoleCitizen();
+    var payload = String.format("{\"data\":{},\"x-access-token\":\"%s\"}", token);
     mockPutCephContent(cephKey, payload);
+
     mockGetForm();
+    mockValidationFormData("{}");
 
-    var verifyResponseDto = new VerifySubjectResponseDto();
-    verifyResponseDto.setValid(false);
-    verifyResponseDto.setError(ErrorDto.builder().localizedMessage("message").build());
+    var requestBody = matchingJsonPath("$.allowedSubjects",
+        equalToJson("[\"INDIVIDUAL\"]"));
+    mockCitizenDigitalSignature(requestBody, 200,
+        "{\"valid\":false,\"error\":{\"localizedMessage\":\"message\"}}");
 
-    mockCitizenDigitalSignature(200, verifyResponseDto);
-
-    var request = post("/api/citizen/task/" + testTaskId + "/sign-form")
+    var request = post("/api/citizen/task/" + TASK_ID + "/sign-form")
         .accept(MediaType.APPLICATION_JSON_VALUE).contentType("application/json")
         .content(payload);
 
-    var result = performWithTokenCitizenRole(request).andExpect(status().isUnprocessableEntity()).andReturn();
-    var response = result.getResponse().getContentAsString();
-    var responseTree = objectMapper.readTree(response);
-    assertThat(
-        responseTree.get("details").get("errors").get(0).get("message")
-            .asText()).isEqualTo("message");
+    var result = performForObjectAsCitizenWithStatus(request, ValidationErrorDto.class,
+        status().isUnprocessableEntity());
+    assertThat(result.getDetails().getErrors().get(0).getMessage()).isEqualTo("message");
   }
 
   @Test
-  public void shouldGetTasksByProcessInstanceId() {
-    mockTaskByProcessInstanceId();
+  void shouldGetTasksByProcessInstanceId() {
+    var testProcessInstanceId = "testProcessInstanceId";
+    mockBpmsRequest(StubRequest.builder()
+        .method(HttpMethod.POST)
+        .path("/api/extended/task")
+        .requestBody(equalToJson(fileContent("/json/getTasksByProcessInstanceIdRequest.json")))
+        .status(200)
+        .responseBody("[{\"processInstanceId\":\"testProcessInstanceId\"}]")
+        .responseHeaders(Map.of("Content-Type", List.of("application/json")))
+        .build());
 
-    MockHttpServletRequestBuilder request = get("/api/task")
+    var request = get("/api/task")
         .param("processInstanceId", testProcessInstanceId)
         .accept(MediaType.APPLICATION_JSON_VALUE);
 
-    List<UserTaskDto> userTaskDtos = Arrays
-        .asList(performForObject(request, UserTaskDto[].class));
+    var userTaskDtos = Arrays.asList(performForObjectAsOfficer(request, UserTaskDto[].class));
 
     assertThat(userTaskDtos.size()).isOne();
     assertThat(userTaskDtos.get(0).getProcessInstanceId()).isEqualTo(testProcessInstanceId);
   }
 
   @Test
-  public void shouldReturn422DuringTaskCompletion() throws Exception {
-    var processInstanceId = "processInstance";
-    var taskDefinitionKey = "taskDefinition";
-    var cephKey = cephKeyProvider.generateKey(taskDefinitionKey,processInstanceId);
-    var payload = "{\"data\":{},\"x-access-token\":\"" + tokenConfig.getValueWithRoleOfficer() + "\"}";
-    mockTaskByParams(testTaskId, processDefinitionId1, processInstanceId, taskDefinitionKey);
+  void shouldReturn422DuringTaskCompletion() {
+    mockGetExtendedTask(fileContent("/json/getSignableTaskWithFormVariablesResponse.json"));
+
+    var processInstanceId = "processInstanceId";
+    var taskDefinitionKey = "taskDefinitionKey";
+    var cephKey = cephKeyProvider.generateKey(taskDefinitionKey, processInstanceId);
+    var token = tokenConfig.getValueWithRoleOfficer();
+    var payload = String.format("{\"data\":{},\"x-access-token\":\"%s\"}", token);
     mockPutCephContent(cephKey, payload);
-    mockValidationFormData(payload);
+
     mockGetForm();
+    mockValidationFormData("{}");
 
-    var errorDto = new ValidationErrorDto();
-    errorDto.setDetails(new ErrorsListDto(Lists.newArrayList(new ErrorDetailDto("myMsg",
-        "variable", "value"))));
-    bpmServer.addStubMapping(
-        stubFor(WireMock.post(urlEqualTo("/api/task/" + testTaskId + "/complete"))
-            .willReturn(aResponse()
-                .withStatus(422)
-                .withHeader("Content-Type", "application/json")
-                .withBody(objectMapper.writeValueAsString(errorDto))))
-    );
+    mockCompleteTask(422,
+        "{\"details\":{\"errors\":[{\"message\":\"myMsg\",\"field\":\"variable\",\"value\":\"value\"}]}}");
 
-    MockHttpServletRequestBuilder request = post("/api/task/" + testTaskId + "/complete")
+    var request = post("/api/task/" + TASK_ID + "/complete")
         .accept(MediaType.APPLICATION_JSON_VALUE).contentType("application/json")
         .content("{\"data\" : {}}");
 
-    String contentAsString = performWithTokenOfficerRole(request)
-        .andExpect(status().is(422))
-        .andReturn()
-        .getResponse()
-        .getContentAsString();
+    var result = performForObjectAsOfficerWithStatus(request, ValidationErrorDto.class,
+        status().is(422));
 
-    var response = objectMapper.readValue(contentAsString, ValidationErrorDto.class);
-
-    assertThat(response).isNotNull();
-    var validationErrorDto = response.getDetails().getErrors().get(0);
+    assertThat(result).isNotNull();
+    var validationErrorDto = result.getDetails().getErrors().get(0);
     assertThat(validationErrorDto.getMessage()).isEqualTo("myMsg");
     assertThat(validationErrorDto.getField()).isEqualTo("variable");
     assertThat(validationErrorDto.getValue()).isEqualTo("value");
   }
 
   @Test
-  public void shouldHandleUserTaskAuthorizationException() throws Exception {
-    TaskEntity task = new TaskEntity();
-    task.setId(testTaskId);
-    task.setAssignee("testuser2");
-    TaskDto taskById = TaskDto.fromEntity(task);
-    bpmServer.addStubMapping(
-        stubFor(WireMock.get(urlPathEqualTo("/api/task/" + testTaskId))
-            .willReturn(aResponse()
-                .withHeader("Content-Type", "application/json")
-                .withStatus(200)
-                .withBody(objectMapper.writeValueAsString(taskById)))
-        )
-    );
+  void shouldHandleUserTaskAuthorizationException() {
+    mockGetExtendedTask(String.format("{\"id\":\"%s\",\"assignee\":\"testuser2\"}", TASK_ID));
 
-    MockHttpServletRequestBuilder request = get("/api/task/" + testTaskId)
+    var request = get("/api/task/" + TASK_ID)
         .accept(MediaType.APPLICATION_JSON_VALUE);
 
-    String contentAsString = performWithTokenOfficerRole(request)
-        .andExpect(status().is(403))
-        .andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8);
-    var response = objectMapper.readValue(contentAsString, SystemErrorDto.class);
+    var response = performForObjectAsOfficerWithStatus(request, SystemErrorDto.class,
+        status().isForbidden());
 
     assertThat(response).isNotNull();
-    assertThat(response.getMessage())
-        .isEqualTo(
-            "The user with username testuser does not have permission on resource Task with id testTaskId");
+    assertThat(response.getMessage()).isEqualTo(
+        "The user with username testuser does not have permission on resource Task with id testTaskId");
     assertThat(response.getLocalizedMessage()).isEqualTo("Немає доступу до задачі з id testTaskId");
   }
 
   @Test
-  public void shouldSuccessfullyClaimTask() throws Exception {
-    var task = new TaskEntity();
-    task.setId(testTaskId);
-    var taskById = TaskDto.fromEntity(task);
-    bpmServer.addStubMapping(stubFor(WireMock.get(urlPathEqualTo("/api/task/" + testTaskId))
-        .willReturn(aResponse()
-            .withHeader("Content-Type", "application/json")
-            .withStatus(200)
-            .withBody(objectMapper.writeValueAsString(taskById)))));
-    bpmServer.addStubMapping(
-        stubFor(WireMock.post(urlPathEqualTo("/api/task/" + testTaskId + "/claim"))
-            .willReturn(aResponse().withStatus(204))));
+  void shouldSuccessfullyClaimTask() throws Exception {
+    mockGetTask(200, String.format("{\"id\":\"%s\",\"assignee\":null}", TASK_ID));
 
-    performWithTokenOfficerRole(post("/api/task/" + testTaskId + "/claim"))
+    mockBpmsRequest(StubRequest.builder()
+        .path(String.format("/api/task/%s/claim", TASK_ID))
+        .method(HttpMethod.POST)
+        .status(204)
+        .build());
+
+    performWithTokenOfficerRole(post(String.format("/api/task/%s/claim", TASK_ID)))
         .andExpect(status().isNoContent());
   }
 
   @Test
-  public void shouldSuccessfullyClaimTaskIfAlreadyAssignedToUser() throws Exception {
-    var task = new TaskEntity();
-    task.setId(testTaskId);
-    task.setAssignee("testuser");
-    var taskById = TaskDto.fromEntity(task);
-    bpmServer.addStubMapping(stubFor(WireMock.get(urlPathEqualTo("/api/task/" + testTaskId))
-        .willReturn(aResponse()
-            .withHeader("Content-Type", "application/json")
-            .withStatus(200)
-            .withBody(objectMapper.writeValueAsString(taskById)))));
-    bpmServer.addStubMapping(
-        stubFor(WireMock.post(urlPathEqualTo("/api/task/" + testTaskId + "/claim"))
-            .willReturn(aResponse().withStatus(204))));
+  void shouldSuccessfullyClaimTaskIfAlreadyAssignedToUser() throws Exception {
+    mockGetTask(200, String.format("{\"id\":\"%s\",\"assignee\":\"testuser\"}", TASK_ID));
 
-    performWithTokenOfficerRole(post("/api/task/" + testTaskId + "/claim"))
+    mockBpmsRequest(StubRequest.builder()
+        .path(String.format("/api/task/%s/claim", TASK_ID))
+        .method(HttpMethod.POST)
+        .status(204)
+        .build());
+
+    performWithTokenOfficerRole(post(String.format("/api/task/%s/claim", TASK_ID)))
         .andExpect(status().isNoContent());
   }
 
-
   @Test
-  public void shouldHandleUserTaskAlreadyAssignedIfTaskAssignedToOtherUser() throws Exception {
-    var task = new TaskEntity();
-    task.setId(testTaskId);
-    task.setName("User task");
-    task.setAssignee("testuser2");
-    var taskById = TaskDto.fromEntity(task);
-    bpmServer.addStubMapping(stubFor(WireMock.get(urlPathEqualTo("/api/task/" + testTaskId))
-        .willReturn(aResponse()
-            .withHeader("Content-Type", "application/json")
-            .withStatus(200)
-            .withBody(objectMapper.writeValueAsString(taskById)))));
+  void shouldHandleUserTaskAlreadyAssignedIfTaskAssignedToOtherUser() {
+    mockGetTask(200,
+        String.format("{\"id\":\"%s\",\"assignee\":\"testuser2\",\"name\":\"User task\"}",
+            TASK_ID));
 
-    var contentAsString = performWithTokenOfficerRole(post("/api/task/" + testTaskId + "/claim"))
-        .andExpect(status().isConflict()).andReturn().getResponse()
-        .getContentAsString(StandardCharsets.UTF_8);
-
-    var response = objectMapper.readValue(contentAsString, SystemErrorDto.class);
+    var response = performForObjectAsOfficerWithStatus(
+        post(String.format("/api/task/%s/claim", TASK_ID)), SystemErrorDto.class,
+        status().isConflict());
 
     assertThat(response.getMessage()).isEqualTo("Task already assigned");
     assertThat(response.getLocalizedMessage())
@@ -495,56 +437,64 @@ public class UserTaskControllerIT extends BaseIT {
   }
 
   @Test
-  public void shouldHandleUserTaskNotExistsOrCompletedIfTaskNotFound() throws Exception {
-    bpmServer.addStubMapping(stubFor(WireMock.get(urlPathEqualTo("/api/task/" + testTaskId))
-        .willReturn(aResponse()
-            .withHeader("Content-Type", "application/json")
-            .withStatus(404)
-            .withBody(objectMapper.writeValueAsString(SystemErrorDto.builder()
-                .message("not found")
-                .build())))));
+  void shouldHandleUserTaskNotExistsOrCompletedIfTaskNotFound() {
+    mockGetTask(404, "{\"message\":\"not found\"}");
 
-    var contentAsString = performWithTokenOfficerRole(post("/api/task/" + testTaskId + "/claim"))
-        .andExpect(status().isNotFound()).andReturn().getResponse()
-        .getContentAsString(StandardCharsets.UTF_8);
-
-    var response = objectMapper.readValue(contentAsString, SystemErrorDto.class);
+    var response = performForObjectAsOfficerWithStatus(
+        post(String.format("/api/task/%s/claim", TASK_ID)), SystemErrorDto.class,
+        status().isNotFound());
 
     assertThat(response.getMessage()).isEqualTo("not found");
     assertThat(response.getLocalizedMessage()).isEqualTo("Задача не існує або вже виконана");
   }
 
   @Test
-  public void shouldReturnBadRequestWithBrokenInputJson() throws Exception {
-    MockHttpServletRequestBuilder request = post("/api/task/{taskId}/complete",
-        "taskId", testTaskId)
+  void shouldReturnBadRequestWithBrokenInputJson() throws Exception {
+    var request = post("/api/task/{taskId}/complete",
+        "taskId", TASK_ID)
         .contentType(MediaType.APPLICATION_JSON)
         .content("{\"data\" : { \"}}");
 
-    performWithTokenOfficerRole(request).andExpect(status().is(400));
+    performWithTokenOfficerRole(request).andExpect(status().isBadRequest());
   }
 
-  @SneakyThrows
-  private void mockTaskByProcessInstanceId() {
-    var task = new TaskEntity();
-    task.setProcessInstanceId(testProcessInstanceId);
-    var taskDto = TaskDto.fromEntity(task);
+  private void mockGetExtendedTask(String response) {
+    mockBpmsRequest(StubRequest.builder()
+        .path(String.format("/api/extended/task/%s", TASK_ID))
+        .method(HttpMethod.GET)
+        .status(200)
+        .responseBody(response)
+        .responseHeaders(Map.of("Content-Type", List.of("application/json")))
+        .build());
+  }
 
-    var requestDto = TaskQueryDto.builder().processInstanceId(testProcessInstanceId)
-        .orQueries(Collections.singletonList(TaskQueryDto.builder()
-            .unassigned(true)
-            .assignee(tokenParser.parseClaims(tokenConfig.getValueWithRoleOfficer())
-                .getPreferredUsername())
-            .build()))
-        .sorting(Lists.newArrayList(SortingDto.builder().build()))
-        .build();
-    bpmServer.addStubMapping(
-        stubFor(WireMock.post(urlPathEqualTo("/api/extended/task"))
-            .withRequestBody(equalTo(objectMapper.writeValueAsString(requestDto)))
-            .willReturn(aResponse()
-                .withHeader("Content-Type", "application/json")
-                .withStatus(200)
-                .withBody(objectMapper.writeValueAsString(Lists.newArrayList(taskDto)))))
-    );
+  private void mockCompleteTask(int status, String body) {
+    mockBpmsRequest(StubRequest.builder()
+        .path(String.format("/api/task/%s/complete", TASK_ID))
+        .method(HttpMethod.POST)
+        .status(status)
+        .responseBody(body)
+        .responseHeaders(Map.of("Content-Type", List.of("application/json")))
+        .build());
+  }
+
+  private void mockGetTask(int status, String body) {
+    mockBpmsRequest(StubRequest.builder()
+        .path(String.format("/api/task/%s", TASK_ID))
+        .method(HttpMethod.GET)
+        .status(status)
+        .responseBody(body)
+        .responseHeaders(Map.of("Content-Type", List.of("application/json")))
+        .build());
+  }
+
+  private void mockBpmsGetTaskCount(int status, String body) {
+    mockBpmsRequest(StubRequest.builder()
+        .path("/api/task/count")
+        .method(HttpMethod.POST)
+        .status(status)
+        .responseBody(body)
+        .responseHeaders(Map.of("Content-Type", List.of("application/json")))
+        .build());
   }
 }

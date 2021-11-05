@@ -2,20 +2,20 @@ package com.epam.digital.data.platform.usrtaskmgt.util;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-public class CephKeyProviderTest {
+class CephKeyProviderTest {
 
   private CephKeyProvider cephKeyProvider;
 
-  @Before
+  @BeforeEach
   public void init() {
     cephKeyProvider = new CephKeyProvider();
   }
 
   @Test
-  public void testGeneratingCephKey() {
+  void testGeneratingCephKey() {
     var expectedKey = "process/testProcessInstanceId/task/testTaskDefinitionKey";
     var taskDefinitionKey = "testTaskDefinitionKey";
     var processInstanceId = "testProcessInstanceId";

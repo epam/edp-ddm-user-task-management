@@ -1,0 +1,13 @@
+{
+  "id": "testTaskId",
+  "processDefinitionId": "pdId1",
+  "processDefinitionName": "testPDName",
+  "processInstanceId": "processInstanceId",
+  "taskDefinitionKey": "taskDefinitionKey",
+  "created": "2021-02-10T13:55:10.123Z",
+  "formKey": "testFormKey",
+  "assignee": "testuser",
+  "esign": false,
+  "formVariables": {},
+  "signatureValidationPack": []
+}
