@@ -23,12 +23,12 @@ import com.epam.digital.data.platform.bpms.api.dto.PaginationQueryDto;
 import com.epam.digital.data.platform.bpms.client.ExtendedHistoryUserTaskRestClient;
 import com.epam.digital.data.platform.bpms.client.HistoryTaskRestClient;
 import com.epam.digital.data.platform.usrtaskmgt.model.Pageable;
-import com.epam.digital.data.platform.usrtaskmgt.util.AuthUtil;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.camunda.bpm.engine.rest.dto.CountResultDto;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
 @Slf4j
@@ -40,10 +40,10 @@ public class HistoryUserTaskServiceImpl implements HistoryUserTaskService {
   private final ExtendedHistoryUserTaskRestClient extendedHistoryTaskRestClient;
 
   @Override
-  public List<HistoryUserTaskDto> getHistoryTasks(Pageable page) {
+  public List<HistoryUserTaskDto> getHistoryTasks(Pageable page, Authentication authentication) {
     log.info("Getting finished user tasks. Parameters: {}", page);
 
-    var historyTaskQueryDto = buildHistoryTaskQueryDto(page);
+    var historyTaskQueryDto = buildHistoryTaskQueryDto(page, authentication);
     var paginationQueryDto = buildPaginationQueryDto(page);
     var historyTasksByParams = extendedHistoryTaskRestClient.getHistoryUserTasksByParams(
         historyTaskQueryDto, paginationQueryDto);
@@ -57,12 +57,12 @@ public class HistoryUserTaskServiceImpl implements HistoryUserTaskService {
   }
 
   @Override
-  public CountResultDto countHistoryTasks() {
+  public CountResultDto countHistoryTasks(Authentication authentication) {
     log.info("Getting count of finished user tasks");
 
     var result = historyTaskRestClient.getHistoryTaskCountByParams(
         HistoryTaskCountQueryDto.builder()
-            .taskAssignee(AuthUtil.getCurrentUsername())
+            .taskAssignee(authentication.getName())
             .finished(true)
             .build());
 
@@ -70,11 +70,11 @@ public class HistoryUserTaskServiceImpl implements HistoryUserTaskService {
     return result;
   }
 
-  private HistoryTaskQueryDto buildHistoryTaskQueryDto(Pageable pageable) {
+  private HistoryTaskQueryDto buildHistoryTaskQueryDto(Pageable pageable, Authentication authentication) {
     return HistoryTaskQueryDto.builder()
         .sortBy(pageable.getSortBy())
         .sortOrder(pageable.getSortOrder())
-        .taskAssignee(AuthUtil.getCurrentUsername())
+        .taskAssignee(authentication.getName())
         .finished(true)
         .build();
   }

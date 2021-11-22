@@ -25,10 +25,11 @@ import com.epam.digital.data.platform.usrtaskmgt.model.Pageable;
 import com.epam.digital.data.platform.usrtaskmgt.model.SignableDataUserTaskDto;
 import java.util.List;
 import org.camunda.bpm.engine.rest.dto.CountResultDto;
+import org.springframework.security.core.Authentication;
 
 /**
- * The UserTaskService class represents a service for {@link UserTaskDto} entity and
- * contains methods for working with a user tasks.
+ * The UserTaskService class represents a service for {@link UserTaskDto} entity and contains
+ * methods for working with a user tasks.
  */
 public interface UserTaskService {
 
@@ -38,60 +39,68 @@ public interface UserTaskService {
    * @param processInstanceId process instance identifier
    * @param page              specifies the index of the first result, the maximum number of results
    *                          and result sorting criteria and order
+   * @param authentication    object with authentication data
    * @return the list of user tasks
    */
-  List<UserTaskDto> getTasks(String processInstanceId, Pageable page);
+  List<UserTaskDto> getTasks(String processInstanceId, Pageable page,
+      Authentication authentication);
 
   /**
    * Method for getting user task entity that can be signed by id.
    *
-   * @param taskId task identifier
+   * @param taskId         task identifier
+   * @param authentication object with authentication data
    * @return the user task entity that can be signed
    */
-  SignableDataUserTaskDto getTaskById(String taskId);
+  SignableDataUserTaskDto getTaskById(String taskId, Authentication authentication);
 
   /**
    * Method for getting the number of tasks.
    *
+   * @param authentication object with authentication data
    * @return the number of tasks
    */
-  CountResultDto countTasks();
+  CountResultDto countTasks(Authentication authentication);
 
   /**
    * Method should complete user task by id. Before completion, {@link FormDataDto} entity must be
    * saved to the ceph.
    *
-   * @param taskId      task identifier
-   * @param formDataDto data to save to the ceph
+   * @param taskId         task identifier
+   * @param formDataDto    data to save to the ceph
+   * @param authentication object with authentication data
    */
-  void completeTaskById(String taskId, FormDataDto formDataDto);
+  void completeTaskById(String taskId, FormDataDto formDataDto, Authentication authentication);
 
   /**
    * Method should verify {@link FormDataDto} entity and complete task by id. Before completion,
    * form data must be saved to the ceph. Performed by a user with the role of an officer.
    *
-   * @param taskId      task identifier
-   * @param formDataDto data to verify
+   * @param taskId         task identifier
+   * @param formDataDto    data to verify
+   * @param authentication object with authentication data
    * @throws SignatureValidationException if the form data is invalid
    */
-  void signOfficerForm(String taskId, FormDataDto formDataDto);
+  void signOfficerForm(String taskId, FormDataDto formDataDto, Authentication authentication);
 
   /**
    * Method should verify {@link FormDataDto} entity and complete task by id. Before completion,
    * form data must be saved to the ceph. Performed by a user with the role of an citizen.
    *
-   * @param taskId      task identifier
-   * @param formDataDto data to verify
+   * @param taskId         task identifier
+   * @param formDataDto    data to verify
+   * @param authentication object with authentication data
    * @throws SignatureValidationException if the form data is invalid
    */
-  void signCitizenForm(String taskId, FormDataDto formDataDto);
+  void signCitizenForm(String taskId, FormDataDto formDataDto, Authentication authentication);
 
   /**
    * Method should claim task by id.
    *
-   * @param taskId task identifier
+   * @param taskId         task identifier
+   * @param authentication object with authentication data
    * @throws UserTaskNotExistsOrCompletedException if the task not found
    * @throws UserTaskAlreadyAssignedException      if the task already assigned to other user
    */
-  void claimTaskById(String taskId);
+  void claimTaskById(String taskId, Authentication authentication);
 }

@@ -36,11 +36,11 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.camunda.bpm.engine.rest.dto.CountResultDto;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -58,8 +58,8 @@ public class UserTaskController {
   @Operation(summary = "Retrieve all tasks", description = "Returns task list")
   @PageableAsQueryParam
   public List<UserTaskDto> getTasks(@RequestParam(required = false) String processInstanceId,
-      @Parameter(hidden = true) Pageable pageable) {
-    return userTaskService.getTasks(processInstanceId, pageable);
+      @Parameter(hidden = true) Pageable pageable, Authentication authentication) {
+    return userTaskService.getTasks(processInstanceId, pageable, authentication);
   }
 
   @GetMapping("/task/{id}")
@@ -72,14 +72,15 @@ public class UserTaskController {
       description = "Task hasn't found",
       responseCode = "404",
       content = @Content(schema = @Schema(implementation = SystemErrorDto.class)))
-  public SignableDataUserTaskDto getTaskById(@PathVariable("id") String taskId) {
-    return userTaskService.getTaskById(taskId);
+  public SignableDataUserTaskDto getTaskById(@PathVariable("id") String taskId,
+      Authentication authentication) {
+    return userTaskService.getTaskById(taskId, authentication);
   }
 
   @GetMapping("/task/count")
   @Operation(summary = "Retrieve count of all tasks", description = "Returns tasks count")
-  public CountResultDto countTasks() {
-    return userTaskService.countTasks();
+  public CountResultDto countTasks(Authentication authentication) {
+    return userTaskService.countTasks(authentication);
   }
 
   @PostMapping("/task/{id}/complete")
@@ -94,12 +95,9 @@ public class UserTaskController {
       description = "Internal server error",
       responseCode = "500",
       content = @Content(schema = @Schema(implementation = SystemErrorDto.class)))
-  public void completeTaskById(
-      @PathVariable("id") String taskId,
-      @RequestBody FormDataDto formDataDto,
-      @RequestHeader("x-access-token") String accessToken) {
-    formDataDto.setAccessToken(accessToken);
-    userTaskService.completeTaskById(taskId, formDataDto);
+  public void completeTaskById(@PathVariable("id") String taskId,
+      @RequestBody FormDataDto formDataDto, Authentication authentication) {
+    userTaskService.completeTaskById(taskId, formDataDto, authentication);
   }
 
   @PreAuthorizeOfficer
@@ -119,12 +117,9 @@ public class UserTaskController {
       description = "Internal server error",
       responseCode = "500",
       content = @Content(schema = @Schema(implementation = SystemErrorDto.class)))
-  public void singOfficerForm(
-      @PathVariable("id") String taskId,
-      @RequestBody FormDataDto formDataDto,
-      @RequestHeader("x-access-token") String accessToken) {
-    formDataDto.setAccessToken(accessToken);
-    userTaskService.signOfficerForm(taskId, formDataDto);
+  public void singOfficerForm(@PathVariable("id") String taskId,
+      @RequestBody FormDataDto formDataDto, Authentication authentication) {
+    userTaskService.signOfficerForm(taskId, formDataDto, authentication);
   }
 
   @PreAuthorizeCitizen
@@ -145,11 +140,9 @@ public class UserTaskController {
       responseCode = "500",
       content = @Content(schema = @Schema(implementation = SystemErrorDto.class)))
   public void singCitizenForm(
-      @PathVariable("id") String taskId,
-      @RequestBody FormDataDto formDataDto,
-      @RequestHeader("x-access-token") String accessToken) {
-    formDataDto.setAccessToken(accessToken);
-    userTaskService.signCitizenForm(taskId, formDataDto);
+      @PathVariable("id") String taskId, @RequestBody FormDataDto formDataDto,
+      Authentication authentication) {
+    userTaskService.signCitizenForm(taskId, formDataDto, authentication);
   }
 
   @Operation(summary = "Claim task by id")
@@ -168,7 +161,7 @@ public class UserTaskController {
       content = @Content(schema = @Schema(implementation = SystemErrorDto.class)))
   @PostMapping("/task/{id}/claim")
   @ResponseStatus(HttpStatus.NO_CONTENT)
-  public void claimTaskById(@PathVariable("id") String taskId) {
-    userTaskService.claimTaskById(taskId);
+  public void claimTaskById(@PathVariable("id") String taskId, Authentication authentication) {
+    userTaskService.claimTaskById(taskId, authentication);
   }
 }

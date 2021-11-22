@@ -16,6 +16,8 @@
 
 package com.epam.digital.data.platform.usrtaskmgt.controller;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
 
 import com.epam.digital.data.platform.bpms.api.dto.HistoryUserTaskDto;
@@ -80,7 +82,7 @@ public abstract class BaseControllerTest {
   }
 
   public void mockCount() {
-    lenient().when(userTaskService.countTasks()).thenReturn(new CountResultDto(22L));
+    lenient().when(userTaskService.countTasks(any())).thenReturn(new CountResultDto(22L));
   }
 
   public void mockGetById() {
@@ -90,11 +92,11 @@ public abstract class BaseControllerTest {
         "testFormKey", true, ImmutableMap.of("var1", 123123), true,
         ImmutableMap.of("fullName", "FullName"), Set.of());
 
-    lenient().when(userTaskService.getTaskById("testId")).thenReturn(taskById);
+    lenient().when(userTaskService.getTaskById(eq("testId"), any())).thenReturn(taskById);
   }
 
   public void mockGetTasks() {
-    lenient().when(userTaskService.getTasks(null, Pageable.builder().build()))
+    lenient().when(userTaskService.getTasks(any(), eq(Pageable.builder().build()), any()))
         .thenReturn(Lists.newArrayList(
             new UserTaskDto("testId", "taskDefinitionKey", "testTaskName", "testAssignee",
                 LocalDateTime.of(LocalDate.of(2020, 12, 12), LocalTime.of(13, 3, 22)), "testDesc",
@@ -107,7 +109,7 @@ public abstract class BaseControllerTest {
   }
 
   public void mockGetTasksByProcessInstanceId() {
-    lenient().when(userTaskService.getTasks("testProcessInstanceId", Pageable.builder().build()))
+    lenient().when(userTaskService.getTasks(eq("testProcessInstanceId"), eq(Pageable.builder().build()), any()))
         .thenReturn(Lists.newArrayList(
             new UserTaskDto("testId", "taskDefinitionKey", "testTaskName", "testAssignee",
                 LocalDateTime.of(LocalDate.of(2020, 12, 12), LocalTime.of(13, 3, 22)), "testDesc",
@@ -116,7 +118,8 @@ public abstract class BaseControllerTest {
   }
 
   public void mockGetHistoryTasks() {
-    lenient().when(historyUserTaskService.getHistoryTasks(Pageable.builder().build()))
+    lenient().when(historyUserTaskService.getHistoryTasks(eq(Pageable.builder().build()), any()
+    ))
         .thenReturn(
             Lists.newArrayList(new HistoryUserTaskDto("testId", "testTaskName", "testAssignee",
                     LocalDateTime.of(LocalDate.of(2020, 12, 12), LocalTime.of(13, 3, 22)),
@@ -145,7 +148,7 @@ public abstract class BaseControllerTest {
                     .localizedMessage("localized message")
                     .build())))
         .when(userTaskService)
-        .claimTaskById("testId404");
+        .claimTaskById(eq("testId404"), any());
 
     lenient().when(messageResolver.getMessage(
         UserTaskManagementMessage.USER_TASK_ALREADY_ASSIGNED, "userTask"))
@@ -153,7 +156,7 @@ public abstract class BaseControllerTest {
 
     lenient().doThrow(new UserTaskAlreadyAssignedException("userTask", "409 message"))
         .when(userTaskService)
-        .claimTaskById("testId409");
+        .claimTaskById(eq("testId409"), any());
 
     lenient().doThrow(
         new InternalServerErrorException(
@@ -164,6 +167,6 @@ public abstract class BaseControllerTest {
                 .localizedMessage("500 localizedMessage")
                 .build()))
         .when(userTaskService)
-        .claimTaskById("testId500");
+        .claimTaskById(eq("testId500"), any());
   }
 }
