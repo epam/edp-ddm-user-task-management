@@ -26,6 +26,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.camunda.bpm.engine.rest.dto.CountResultDto;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -43,13 +44,14 @@ public class HistoryUserTaskController {
       summary = "Retrieve all completed tasks",
       description = "Returns completed task list")
   @PageableAsQueryParam
-  public List<HistoryUserTaskDto> getHistoryTasks(@Parameter(hidden = true) Pageable pageable) {
-    return historyUserTaskService.getHistoryTasks(pageable);
+  public List<HistoryUserTaskDto> getHistoryTasks(@Parameter(hidden = true) Pageable pageable,
+      Authentication authentication) {
+    return historyUserTaskService.getHistoryTasks(pageable, authentication);
   }
 
   @GetMapping("/count")
   @Operation(summary = "Retrieve count of all finished tasks", description = "Returns finished tasks count")
-  public CountResultDto countHistoryTasks() {
-    return historyUserTaskService.countHistoryTasks();
+  public CountResultDto countHistoryTasks(Authentication authentication) {
+    return historyUserTaskService.countHistoryTasks(authentication);
   }
 }

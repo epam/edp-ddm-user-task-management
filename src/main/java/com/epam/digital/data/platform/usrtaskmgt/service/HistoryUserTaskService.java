@@ -20,6 +20,7 @@ import com.epam.digital.data.platform.bpms.api.dto.HistoryUserTaskDto;
 import com.epam.digital.data.platform.usrtaskmgt.model.Pageable;
 import java.util.List;
 import org.camunda.bpm.engine.rest.dto.CountResultDto;
+import org.springframework.security.core.Authentication;
 
 /**
  * The HistoryUserTaskService class represents a service for {@link HistoryUserTaskDto} entity and
@@ -33,16 +34,18 @@ public interface HistoryUserTaskService {
   /**
    * Method for getting a list of finished user task entities.
    *
-   * @param pageable specifies the index of the first result, maximum number of results and result
-   *                 sorting
+   * @param pageable       specifies the index of the first result, maximum number of results and
+   *                       result sorting
+   * @param authentication object with authentication data
    * @return the list of finished user tasks.
    */
-  List<HistoryUserTaskDto> getHistoryTasks(Pageable pageable);
+  List<HistoryUserTaskDto> getHistoryTasks(Pageable pageable, Authentication authentication);
 
   /**
    * Method for getting the number of finished tasks.
    *
+   * @param authentication object with authentication data
    * @return the number of finished tasks
    */
-  CountResultDto countHistoryTasks();
+  CountResultDto countHistoryTasks(Authentication authentication);
 }
