@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.epam.digital.data.platform.usrtaskmgt.model;
+package com.epam.digital.data.platform.usrtaskmgt.model.request;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

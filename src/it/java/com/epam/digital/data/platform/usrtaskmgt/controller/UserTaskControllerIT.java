@@ -27,14 +27,15 @@ import com.epam.digital.data.platform.bpms.api.dto.UserTaskDto;
 import com.epam.digital.data.platform.starter.errorhandling.dto.SystemErrorDto;
 import com.epam.digital.data.platform.starter.errorhandling.dto.ValidationErrorDto;
 import com.epam.digital.data.platform.usrtaskmgt.BaseIT;
-import com.epam.digital.data.platform.usrtaskmgt.model.SignableDataUserTaskDto;
 import com.epam.digital.data.platform.usrtaskmgt.model.StubRequest;
+import com.epam.digital.data.platform.usrtaskmgt.model.response.CountResponse;
+import com.epam.digital.data.platform.usrtaskmgt.model.response.SignableDataUserTaskResponse;
 import java.time.LocalDateTime;
 import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import org.camunda.bpm.engine.rest.dto.CountResultDto;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
@@ -51,10 +52,10 @@ class UserTaskControllerIT extends BaseIT {
 
     var request = get("/api/task/count")
         .accept(MediaType.APPLICATION_JSON_VALUE);
-    var result = performForObjectAsOfficer(request, CountResultDto.class);
+    var result = performForObjectAsOfficer(request, CountResponse.class);
 
     assertThat(result).isNotNull()
-        .extracting(CountResultDto::getCount).isEqualTo(testTaskCount);
+        .extracting(CountResponse::getCount).isEqualTo(testTaskCount);
   }
 
   @Test
@@ -108,11 +109,11 @@ class UserTaskControllerIT extends BaseIT {
 
     var request = get("/api/task/" + TASK_ID)
         .accept(MediaType.APPLICATION_JSON_VALUE);
-    var taskById = performForObjectAsOfficer(request, SignableDataUserTaskDto.class);
+    var taskById = performForObjectAsOfficer(request, SignableDataUserTaskResponse.class);
 
     assertThat(taskById).isNotNull()
         .hasFieldOrPropertyWithValue("id", TASK_ID)
-        .hasFieldOrPropertyWithValue("data", null)
+        .hasFieldOrPropertyWithValue("data", new LinkedHashMap<>())
         .hasFieldOrPropertyWithValue("eSign", true)
         .hasFieldOrPropertyWithValue("processDefinitionId", "pdId1")
         .hasFieldOrPropertyWithValue("processDefinitionName", "testPDName")
@@ -137,7 +138,7 @@ class UserTaskControllerIT extends BaseIT {
 
     var request = get("/api/task/" + TASK_ID)
         .accept(MediaType.APPLICATION_JSON_VALUE);
-    var taskById = performForObjectAsOfficer(request, SignableDataUserTaskDto.class);
+    var taskById = performForObjectAsOfficer(request, SignableDataUserTaskResponse.class);
 
     assertThat(taskById).isNotNull()
         .hasFieldOrPropertyWithValue("id", TASK_ID)
@@ -496,7 +497,7 @@ class UserTaskControllerIT extends BaseIT {
 
   private void mockGetTask(int status, String body) {
     mockBpmsRequest(StubRequest.builder()
-        .path(String.format("/api/task/%s", TASK_ID))
+        .path(String.format("/api/extended/task/%s", TASK_ID))
         .method(HttpMethod.GET)
         .status(status)
         .responseBody(body)

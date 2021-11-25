@@ -22,7 +22,7 @@ import com.epam.digital.data.platform.starter.errorhandling.dto.ErrorsListDto;
 import com.epam.digital.data.platform.starter.errorhandling.dto.SystemErrorDto;
 import com.epam.digital.data.platform.starter.errorhandling.dto.ValidationErrorDto;
 import com.epam.digital.data.platform.starter.localization.MessageResolver;
-import com.epam.digital.data.platform.usrtaskmgt.enums.UserTaskManagementMessage;
+import com.epam.digital.data.platform.usrtaskmgt.i18n.UserTaskManagementMessage;
 import com.epam.digital.data.platform.usrtaskmgt.exception.SignatureValidationException;
 import com.epam.digital.data.platform.usrtaskmgt.exception.UserTaskAlreadyAssignedException;
 import com.epam.digital.data.platform.usrtaskmgt.exception.UserTaskAuthorizationException;

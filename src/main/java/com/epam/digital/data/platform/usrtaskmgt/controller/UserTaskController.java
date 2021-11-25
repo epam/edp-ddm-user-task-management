@@ -16,17 +16,18 @@
 
 package com.epam.digital.data.platform.usrtaskmgt.controller;
 
-import com.epam.digital.data.platform.bpms.api.dto.UserTaskDto;
 import com.epam.digital.data.platform.integration.ceph.dto.FormDataDto;
 import com.epam.digital.data.platform.starter.errorhandling.dto.SystemErrorDto;
 import com.epam.digital.data.platform.starter.errorhandling.dto.ValidationErrorDto;
 import com.epam.digital.data.platform.starter.security.annotation.PreAuthorizeAnySystemRole;
 import com.epam.digital.data.platform.starter.security.annotation.PreAuthorizeCitizen;
 import com.epam.digital.data.platform.starter.security.annotation.PreAuthorizeOfficer;
-import com.epam.digital.data.platform.usrtaskmgt.model.Pageable;
-import com.epam.digital.data.platform.usrtaskmgt.model.SignableDataUserTaskDto;
-import com.epam.digital.data.platform.usrtaskmgt.model.swagger.PageableAsQueryParam;
-import com.epam.digital.data.platform.usrtaskmgt.service.UserTaskService;
+import com.epam.digital.data.platform.usrtaskmgt.model.request.Pageable;
+import com.epam.digital.data.platform.usrtaskmgt.controller.swagger.PageableAsQueryParam;
+import com.epam.digital.data.platform.usrtaskmgt.model.response.CountResponse;
+import com.epam.digital.data.platform.usrtaskmgt.model.response.SignableDataUserTaskResponse;
+import com.epam.digital.data.platform.usrtaskmgt.model.response.UserTaskResponse;
+import com.epam.digital.data.platform.usrtaskmgt.service.UserTaskManagementService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -34,7 +35,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
-import org.camunda.bpm.engine.rest.dto.CountResultDto;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -52,14 +52,14 @@ import org.springframework.web.bind.annotation.RestController;
 @PreAuthorizeAnySystemRole
 public class UserTaskController {
 
-  private final UserTaskService userTaskService;
+  private final UserTaskManagementService userTaskManagementService;
 
   @GetMapping("/task")
   @Operation(summary = "Retrieve all tasks", description = "Returns task list")
   @PageableAsQueryParam
-  public List<UserTaskDto> getTasks(@RequestParam(required = false) String processInstanceId,
+  public List<UserTaskResponse> getTasks(@RequestParam(required = false) String processInstanceId,
       @Parameter(hidden = true) Pageable pageable, Authentication authentication) {
-    return userTaskService.getTasks(processInstanceId, pageable, authentication);
+    return userTaskManagementService.getTasks(processInstanceId, pageable, authentication);
   }
 
   @GetMapping("/task/{id}")
@@ -67,20 +67,20 @@ public class UserTaskController {
   @ApiResponse(
       description = "Returns task by id",
       responseCode = "200",
-      content = @Content(schema = @Schema(implementation = SignableDataUserTaskDto.class)))
+      content = @Content(schema = @Schema(implementation = SignableDataUserTaskResponse.class)))
   @ApiResponse(
       description = "Task hasn't found",
       responseCode = "404",
       content = @Content(schema = @Schema(implementation = SystemErrorDto.class)))
-  public SignableDataUserTaskDto getTaskById(@PathVariable("id") String taskId,
+  public SignableDataUserTaskResponse getTaskById(@PathVariable("id") String taskId,
       Authentication authentication) {
-    return userTaskService.getTaskById(taskId, authentication);
+    return userTaskManagementService.getTaskById(taskId, authentication);
   }
 
   @GetMapping("/task/count")
   @Operation(summary = "Retrieve count of all tasks", description = "Returns tasks count")
-  public CountResultDto countTasks(Authentication authentication) {
-    return userTaskService.countTasks(authentication);
+  public CountResponse countTasks(Authentication authentication) {
+    return userTaskManagementService.countTasks(authentication);
   }
 
   @PostMapping("/task/{id}/complete")
@@ -97,7 +97,7 @@ public class UserTaskController {
       content = @Content(schema = @Schema(implementation = SystemErrorDto.class)))
   public void completeTaskById(@PathVariable("id") String taskId,
       @RequestBody FormDataDto formDataDto, Authentication authentication) {
-    userTaskService.completeTaskById(taskId, formDataDto, authentication);
+    userTaskManagementService.completeTaskById(taskId, formDataDto, authentication);
   }
 
   @PreAuthorizeOfficer
@@ -119,7 +119,7 @@ public class UserTaskController {
       content = @Content(schema = @Schema(implementation = SystemErrorDto.class)))
   public void singOfficerForm(@PathVariable("id") String taskId,
       @RequestBody FormDataDto formDataDto, Authentication authentication) {
-    userTaskService.signOfficerForm(taskId, formDataDto, authentication);
+    userTaskManagementService.signOfficerForm(taskId, formDataDto, authentication);
   }
 
   @PreAuthorizeCitizen
@@ -139,10 +139,10 @@ public class UserTaskController {
       description = "Internal server error",
       responseCode = "500",
       content = @Content(schema = @Schema(implementation = SystemErrorDto.class)))
-  public void singCitizenForm(
+  public void signCitizenForm(
       @PathVariable("id") String taskId, @RequestBody FormDataDto formDataDto,
       Authentication authentication) {
-    userTaskService.signCitizenForm(taskId, formDataDto, authentication);
+    userTaskManagementService.signCitizenForm(taskId, formDataDto, authentication);
   }
 
   @Operation(summary = "Claim task by id")
@@ -162,6 +162,6 @@ public class UserTaskController {
   @PostMapping("/task/{id}/claim")
   @ResponseStatus(HttpStatus.NO_CONTENT)
   public void claimTaskById(@PathVariable("id") String taskId, Authentication authentication) {
-    userTaskService.claimTaskById(taskId, authentication);
+    userTaskManagementService.claimTaskById(taskId, authentication);
   }
 }

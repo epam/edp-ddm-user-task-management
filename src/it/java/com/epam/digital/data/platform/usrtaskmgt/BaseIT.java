@@ -26,7 +26,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.epam.digital.data.platform.starter.security.jwt.TokenParser;
 import com.epam.digital.data.platform.usrtaskmgt.config.TokenConfig;
 import com.epam.digital.data.platform.usrtaskmgt.model.StubRequest;
-import com.epam.digital.data.platform.usrtaskmgt.util.CephKeyProvider;
+import com.epam.digital.data.platform.usrtaskmgt.remote.impl.CephKeyProvider;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.MappingBuilder;
