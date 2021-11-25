@@ -18,6 +18,7 @@ package com.epam.digital.data.platform.usrtaskmgt.util;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.epam.digital.data.platform.usrtaskmgt.remote.impl.CephKeyProvider;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

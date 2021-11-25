@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.epam.digital.data.platform.usrtaskmgt.util;
+package com.epam.digital.data.platform.usrtaskmgt.remote.impl;
 
 import org.springframework.stereotype.Component;
 

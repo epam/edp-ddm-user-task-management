@@ -18,40 +18,43 @@ package com.epam.digital.data.platform.usrtaskmgt.mapper;
 
 import com.epam.digital.data.platform.bpms.api.dto.SignableUserTaskDto;
 import com.epam.digital.data.platform.bpms.api.dto.UserTaskDto;
-import com.epam.digital.data.platform.usrtaskmgt.model.SignableDataUserTaskDto;
-import org.camunda.bpm.engine.rest.dto.task.TaskDto;
+import com.epam.digital.data.platform.usrtaskmgt.model.response.SignableDataUserTaskResponse;
+import com.epam.digital.data.platform.usrtaskmgt.model.response.CountResponse;
+import com.epam.digital.data.platform.usrtaskmgt.model.response.UserTaskResponse;
+import java.util.List;
+import org.camunda.bpm.engine.rest.dto.CountResultDto;
+import org.mapstruct.IterableMapping;
 import org.mapstruct.Mapper;
+import org.mapstruct.Named;
 import org.mapstruct.ReportingPolicy;
 
 /**
  * The interface represents a mapper for user task entity. The interface contains a methods for
  * converting camunda task entity.The methods are implemented using the MapStruct.
  */
-@Mapper(uses = MapperUtils.class, componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface UserTaskDtoMapper {
 
   /**
-   * Method for converting camunda {@link TaskDto} entity to {@link UserTaskDto} entity
+   * Method for converting {@link UserTaskDto} entity to {@link UserTaskResponse} entity
    *
-   * @param taskDto camunda task entity
+   * @param dto bpms task entity
    * @return a user task entity
    */
-  UserTaskDto toUserTaskDto(TaskDto taskDto);
+  @Named("toUserTaskDto")
+  UserTaskResponse toUserTaskDto(UserTaskDto dto);
+
+  @IterableMapping(qualifiedByName = "toUserTaskDto")
+  List<UserTaskResponse> toUserTaskDtoList(List<UserTaskDto> dtos);
 
   /**
-   * Method for converting camunda {@link TaskDto} entity to {@link SignableDataUserTaskDto} entity
-   *
-   * @param taskDto camunda task entity
-   * @return a user task entity that can be signed
-   */
-  SignableDataUserTaskDto toSignableDataUserTaskDto(TaskDto taskDto);
-
-  /**
-   * Method for converting {@link SignableDataUserTaskDto} entity to {@link SignableDataUserTaskDto}
-   * entity
+   * Method for converting {@link SignableDataUserTaskResponse} entity to {@link
+   * SignableDataUserTaskResponse} entity
    *
    * @param signableUserTaskDto bpms task entity
    * @return a user task entity that can be signed
    */
-  SignableDataUserTaskDto toSignableDataUserTaskDto(SignableUserTaskDto signableUserTaskDto);
+  SignableDataUserTaskResponse toSignableDataUserTaskDto(SignableUserTaskDto signableUserTaskDto);
+
+  CountResponse toCountResponse(CountResultDto dto);
 }
