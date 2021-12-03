@@ -16,12 +16,12 @@
 
 package com.epam.digital.data.platform.usrtaskmgt.controller;
 
-import com.epam.digital.data.platform.integration.ceph.dto.FormDataDto;
 import com.epam.digital.data.platform.starter.errorhandling.dto.SystemErrorDto;
 import com.epam.digital.data.platform.starter.errorhandling.dto.ValidationErrorDto;
 import com.epam.digital.data.platform.starter.security.annotation.PreAuthorizeAnySystemRole;
 import com.epam.digital.data.platform.starter.security.annotation.PreAuthorizeCitizen;
 import com.epam.digital.data.platform.starter.security.annotation.PreAuthorizeOfficer;
+import com.epam.digital.data.platform.storage.form.dto.FormDataDto;
 import com.epam.digital.data.platform.usrtaskmgt.model.request.Pageable;
 import com.epam.digital.data.platform.usrtaskmgt.controller.swagger.PageableAsQueryParam;
 import com.epam.digital.data.platform.usrtaskmgt.model.response.CountResponse;

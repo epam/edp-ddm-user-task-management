@@ -24,9 +24,10 @@ import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.epam.digital.data.platform.starter.security.jwt.TokenParser;
+import com.epam.digital.data.platform.storage.form.service.FormDataKeyProvider;
+import com.epam.digital.data.platform.storage.form.service.FormDataKeyProviderImpl;
 import com.epam.digital.data.platform.usrtaskmgt.config.TokenConfig;
 import com.epam.digital.data.platform.usrtaskmgt.model.StubRequest;
-import com.epam.digital.data.platform.usrtaskmgt.remote.impl.CephKeyProvider;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.MappingBuilder;
@@ -87,8 +88,8 @@ public abstract class BaseIT {
   private String cephBucketName;
   @Autowired
   protected TokenConfig tokenConfig;
-  @Autowired
-  protected CephKeyProvider cephKeyProvider;
+
+  protected FormDataKeyProvider cephKeyProvider = new FormDataKeyProviderImpl();
 
   @AfterEach
   public void tearDown() {
