@@ -17,7 +17,7 @@
 package com.epam.digital.data.platform.usrtaskmgt.remote;
 
 import com.epam.digital.data.platform.dso.api.dto.Subject;
-import com.epam.digital.data.platform.integration.ceph.dto.FormDataDto;
+import com.epam.digital.data.platform.storage.form.dto.FormDataDto;
 import com.epam.digital.data.platform.usrtaskmgt.exception.SignatureValidationException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.Set;

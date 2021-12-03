@@ -17,7 +17,6 @@
 package com.epam.digital.data.platform.usrtaskmgt.config;
 
 import com.epam.digital.data.platform.dso.client.DigitalSignatureRestClient;
-import com.epam.digital.data.platform.integration.ceph.config.CephConfig;
 import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateDeserializer;
 import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer;
 import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateSerializer;
@@ -28,7 +27,6 @@ import org.springframework.cloud.openfeign.EnableFeignClients;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
-import org.springframework.context.annotation.Import;
 
 /**
  * The class represents a holder for beans of the general configuration. Each method produces a bean
@@ -37,7 +35,6 @@ import org.springframework.context.annotation.Import;
  */
 @Configuration
 @EnableAspectJAutoProxy
-@Import(CephConfig.class)
 @EnableFeignClients(clients = DigitalSignatureRestClient.class)
 public class GeneralConfig {
 

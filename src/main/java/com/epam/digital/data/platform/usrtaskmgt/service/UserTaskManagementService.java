@@ -18,10 +18,11 @@ package com.epam.digital.data.platform.usrtaskmgt.service;
 
 import com.epam.digital.data.platform.bpms.client.exception.TaskNotFoundException;
 import com.epam.digital.data.platform.dso.api.dto.Subject;
-import com.epam.digital.data.platform.integration.ceph.dto.FormDataDto;
 import com.epam.digital.data.platform.starter.errorhandling.exception.ValidationException;
 import com.epam.digital.data.platform.starter.validation.service.FormValidationService;
-import com.epam.digital.data.platform.usrtaskmgt.exception.FormDataStorageException;
+import com.epam.digital.data.platform.storage.base.exception.RepositoryCommunicationException;
+import com.epam.digital.data.platform.storage.form.dto.FormDataDto;
+import com.epam.digital.data.platform.storage.form.service.FormDataStorageService;
 import com.epam.digital.data.platform.usrtaskmgt.exception.UserTaskAlreadyAssignedException;
 import com.epam.digital.data.platform.usrtaskmgt.exception.UserTaskAuthorizationException;
 import com.epam.digital.data.platform.usrtaskmgt.exception.UserTaskNotExistsException;
@@ -31,10 +32,11 @@ import com.epam.digital.data.platform.usrtaskmgt.model.response.CountResponse;
 import com.epam.digital.data.platform.usrtaskmgt.model.response.SignableDataUserTaskResponse;
 import com.epam.digital.data.platform.usrtaskmgt.model.response.UserTaskResponse;
 import com.epam.digital.data.platform.usrtaskmgt.remote.DigitalSignatureRemoteService;
-import com.epam.digital.data.platform.usrtaskmgt.remote.FormDataRemoteService;
 import com.epam.digital.data.platform.usrtaskmgt.remote.UserTaskRemoteService;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -67,9 +69,11 @@ import org.springframework.util.StringUtils;
 @RequiredArgsConstructor
 public class UserTaskManagementService {
 
+  private static final LinkedHashMap<String, Object> EMPTY_FORM_DATA = new LinkedHashMap<>();
+
   private final UserTaskRemoteService userTaskRemoteService;
   private final DigitalSignatureRemoteService digitalSignatureRemoteService;
-  private final FormDataRemoteService formDataRemoteService;
+  private final FormDataStorageService formDataStorageService;
   private final FormValidationService formValidationService;
 
   /**
@@ -142,7 +146,6 @@ public class UserTaskManagementService {
    * @param taskId         task identifier
    * @param authentication authentication object of current authenticated user
    * @return the user task entity with form data pre-population
-   *
    * @throws UserTaskNotExistsException     if user task wasn't found
    * @throws UserTaskAuthorizationException if task is assigned to other user
    */
@@ -158,10 +161,10 @@ public class UserTaskManagementService {
 
     var taskDefinitionKey = userTaskDto.getTaskDefinitionKey();
     var processInstanceId = userTaskDto.getProcessInstanceId();
-    var data = formDataRemoteService.getFormData(taskDefinitionKey, processInstanceId);
+    var data = getFormDataFromCeph(taskDefinitionKey, processInstanceId);
     log.trace("Form data pre-population is found");
 
-    userTaskDto.setData(data);
+    userTaskDto.setData(data.map(FormDataDto::getData).orElse(EMPTY_FORM_DATA));
     log.info("Unfinished user task by id {} is found", taskId);
     return userTaskDto;
   }
@@ -240,11 +243,9 @@ public class UserTaskManagementService {
    * @param formData          data to save to the ceph
    * @param authentication    authentication object of current authenticated user
    * @param signatureVerifier object that performs signature verification
-   *
    * @throws UserTaskNotExistsException     if user task wasn't found
    * @throws UserTaskAuthorizationException if task is assigned to other user
    * @throws ValidationException            if form data hasn't passed the validation
-   * @throws FormDataStorageException       in case of failure during saving the form data
    */
   private void completeTask(String taskId, FormDataDto formData, Authentication authentication,
       SignatureVerifier signatureVerifier) {
@@ -264,7 +265,7 @@ public class UserTaskManagementService {
     log.trace("Form data has passed the signature verification if there was any");
 
     formData.setAccessToken((String) authentication.getCredentials());
-    formDataRemoteService.saveFormData(taskDto.getTaskDefinitionKey(),
+    formDataStorageService.putFormData(taskDto.getTaskDefinitionKey(),
         taskDto.getProcessInstanceId(),
         formData);
     log.trace("Form data is saved");
@@ -320,6 +321,17 @@ public class UserTaskManagementService {
     var formValidationResponseDto = formValidationService.validateForm(formId, formDataDto);
     if (!formValidationResponseDto.isValid()) {
       throw new ValidationException(formValidationResponseDto.getError());
+    }
+  }
+
+  private Optional<FormDataDto> getFormDataFromCeph(String taskDefinitionKey,
+      String processInstanceId) {
+    try {
+      return formDataStorageService.getFormData(taskDefinitionKey, processInstanceId);
+    } catch (RepositoryCommunicationException ex) {
+      log.warn("Couldn't get form data by task definition {} and process instance id {} from ceph",
+          taskDefinitionKey, processInstanceId, ex);
+      return Optional.empty();
     }
   }
 

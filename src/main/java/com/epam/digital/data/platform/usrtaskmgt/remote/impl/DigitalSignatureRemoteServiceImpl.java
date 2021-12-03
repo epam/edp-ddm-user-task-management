@@ -20,7 +20,7 @@ import com.epam.digital.data.platform.dso.api.dto.Subject;
 import com.epam.digital.data.platform.dso.api.dto.VerificationRequestDto;
 import com.epam.digital.data.platform.dso.api.dto.VerifySubjectRequestDto;
 import com.epam.digital.data.platform.dso.client.DigitalSignatureRestClient;
-import com.epam.digital.data.platform.integration.ceph.dto.FormDataDto;
+import com.epam.digital.data.platform.storage.form.dto.FormDataDto;
 import com.epam.digital.data.platform.usrtaskmgt.exception.SignatureValidationException;
 import com.epam.digital.data.platform.usrtaskmgt.remote.DigitalSignatureRemoteService;
 import com.fasterxml.jackson.core.JsonProcessingException;
