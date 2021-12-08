@@ -23,7 +23,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.epam.digital.data.platform.bpms.api.dto.UserTaskDto;
+import com.epam.digital.data.platform.bpms.api.dto.DdmTaskDto;
 import com.epam.digital.data.platform.starter.errorhandling.dto.SystemErrorDto;
 import com.epam.digital.data.platform.starter.errorhandling.dto.ValidationErrorDto;
 import com.epam.digital.data.platform.usrtaskmgt.BaseIT;
@@ -88,7 +88,7 @@ class UserTaskControllerIT extends BaseIT {
 
     var request = get("/api/task")
         .accept(MediaType.APPLICATION_JSON_VALUE);
-    var userTaskDtos = Arrays.asList(performForObjectAsOfficer(request, UserTaskDto[].class));
+    var userTaskDtos = Arrays.asList(performForObjectAsOfficer(request, DdmTaskDto[].class));
 
     assertThat(userTaskDtos).hasSize(2);
     assertThat(userTaskDtos.get(0))
@@ -357,7 +357,7 @@ class UserTaskControllerIT extends BaseIT {
         .param("processInstanceId", testProcessInstanceId)
         .accept(MediaType.APPLICATION_JSON_VALUE);
 
-    var userTaskDtos = Arrays.asList(performForObjectAsOfficer(request, UserTaskDto[].class));
+    var userTaskDtos = Arrays.asList(performForObjectAsOfficer(request, DdmTaskDto[].class));
 
     assertThat(userTaskDtos.size()).isOne();
     assertThat(userTaskDtos.get(0).getProcessInstanceId()).isEqualTo(testProcessInstanceId);

@@ -16,7 +16,7 @@
 
 package com.epam.digital.data.platform.usrtaskmgt.remote;
 
-import com.epam.digital.data.platform.bpms.api.dto.UserTaskDto;
+import com.epam.digital.data.platform.bpms.api.dto.DdmTaskDto;
 import com.epam.digital.data.platform.bpms.client.exception.TaskNotFoundException;
 import com.epam.digital.data.platform.usrtaskmgt.model.request.Pageable;
 import com.epam.digital.data.platform.usrtaskmgt.model.response.CountResponse;
@@ -27,7 +27,7 @@ import org.springframework.lang.NonNull;
 import org.springframework.lang.Nullable;
 
 /**
- * Service for {@link UserTaskDto} entity. Contains methods for accessing user tasks.
+ * Service for {@link DdmTaskDto} entity. Contains methods for accessing user tasks.
  */
 public interface UserTaskRemoteService {
 

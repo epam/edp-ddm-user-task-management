@@ -16,7 +16,7 @@
 
 package com.epam.digital.data.platform.usrtaskmgt.model.response;
 
-import com.epam.digital.data.platform.bpms.api.dto.SignableUserTaskDto;
+import com.epam.digital.data.platform.bpms.api.dto.DdmSignableTaskDto;
 import com.epam.digital.data.platform.dso.api.dto.Subject;
 import java.time.LocalDateTime;
 import java.util.Map;
@@ -27,7 +27,7 @@ import lombok.NoArgsConstructor;
 
 /**
  * The class represents a data transfer object for user task, the difference with {@link
- * SignableUserTaskDto} entity additional field:
+ * DdmSignableTaskDto} entity additional field:
  * <li>{@link SignableDataUserTaskResponse#data} this is a data to sign</li>
  */
 @Data

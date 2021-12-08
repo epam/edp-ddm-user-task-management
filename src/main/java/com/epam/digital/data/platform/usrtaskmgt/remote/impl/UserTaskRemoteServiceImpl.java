@@ -16,11 +16,11 @@
 
 package com.epam.digital.data.platform.usrtaskmgt.remote.impl;
 
-import com.epam.digital.data.platform.bpms.api.dto.ClaimTaskDto;
+import com.epam.digital.data.platform.bpms.api.dto.DdmClaimTaskQueryDto;
 import com.epam.digital.data.platform.bpms.api.dto.PaginationQueryDto;
 import com.epam.digital.data.platform.bpms.api.dto.SortingDto;
-import com.epam.digital.data.platform.bpms.api.dto.TaskCountQueryDto;
-import com.epam.digital.data.platform.bpms.api.dto.TaskQueryDto;
+import com.epam.digital.data.platform.bpms.api.dto.DdmTaskCountQueryDto;
+import com.epam.digital.data.platform.bpms.api.dto.DdmTaskQueryDto;
 import com.epam.digital.data.platform.bpms.client.CamundaTaskRestClient;
 import com.epam.digital.data.platform.bpms.client.ExtendedUserTaskRestClient;
 import com.epam.digital.data.platform.usrtaskmgt.mapper.UserTaskDtoMapper;
@@ -53,7 +53,7 @@ public class UserTaskRemoteServiceImpl implements UserTaskRemoteService {
     log.debug("Getting assigned to current user or unassigned user tasks of process instance {}. "
         + "Paging and sorting params - {}", processInstanceId, page);
 
-    var unassignedTaskQuery = TaskQueryDto.builder()
+    var unassignedTaskQuery = DdmTaskQueryDto.builder()
         .unassigned(true)
         .assignee(assignee)
         .build();
@@ -61,7 +61,7 @@ public class UserTaskRemoteServiceImpl implements UserTaskRemoteService {
         .sortBy(page.getSortBy())
         .sortOrder(page.getSortOrder())
         .build();
-    var taskQueryDto = TaskQueryDto.builder()
+    var taskQueryDto = DdmTaskQueryDto.builder()
         .processInstanceId(processInstanceId)
         .orQueries(List.of(unassignedTaskQuery))
         .sorting(List.of(sortingDto))
@@ -82,11 +82,11 @@ public class UserTaskRemoteServiceImpl implements UserTaskRemoteService {
   public CountResponse countUserTasks(@NonNull String assignee) {
     log.debug("Counting assigned to current user or unassigned user tasks");
 
-    var unassignedCountTaskQuery = TaskCountQueryDto.builder()
+    var unassignedCountTaskQuery = DdmTaskCountQueryDto.builder()
         .assignee(assignee)
         .unassigned(true)
         .build();
-    var taskCountQueryDto = TaskCountQueryDto.builder()
+    var taskCountQueryDto = DdmTaskCountQueryDto.builder()
         .orQueries(List.of(unassignedCountTaskQuery))
         .build();
     var dto = camundaTaskRestClient.getTaskCountByParams(taskCountQueryDto);
@@ -113,7 +113,7 @@ public class UserTaskRemoteServiceImpl implements UserTaskRemoteService {
   public void assignUserTask(@NonNull String taskId, @NonNull String userName) {
     log.debug("Claiming task with id {} to {}", taskId, userName);
 
-    var claimTaskDto = ClaimTaskDto.builder()
+    var claimTaskDto = DdmClaimTaskQueryDto.builder()
         .userId(userName)
         .build();
     camundaTaskRestClient.claimTaskById(taskId, claimTaskDto);
