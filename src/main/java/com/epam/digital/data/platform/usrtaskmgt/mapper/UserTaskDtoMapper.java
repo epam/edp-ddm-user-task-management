@@ -16,10 +16,10 @@
 
 package com.epam.digital.data.platform.usrtaskmgt.mapper;
 
-import com.epam.digital.data.platform.bpms.api.dto.SignableUserTaskDto;
-import com.epam.digital.data.platform.bpms.api.dto.UserTaskDto;
-import com.epam.digital.data.platform.usrtaskmgt.model.response.SignableDataUserTaskResponse;
+import com.epam.digital.data.platform.bpms.api.dto.DdmSignableTaskDto;
+import com.epam.digital.data.platform.bpms.api.dto.DdmTaskDto;
 import com.epam.digital.data.platform.usrtaskmgt.model.response.CountResponse;
+import com.epam.digital.data.platform.usrtaskmgt.model.response.SignableDataUserTaskResponse;
 import com.epam.digital.data.platform.usrtaskmgt.model.response.UserTaskResponse;
 import java.util.List;
 import org.camunda.bpm.engine.rest.dto.CountResultDto;
@@ -36,16 +36,16 @@ import org.mapstruct.ReportingPolicy;
 public interface UserTaskDtoMapper {
 
   /**
-   * Method for converting {@link UserTaskDto} entity to {@link UserTaskResponse} entity
+   * Method for converting {@link DdmTaskDto} entity to {@link UserTaskResponse} entity
    *
    * @param dto bpms task entity
    * @return a user task entity
    */
   @Named("toUserTaskDto")
-  UserTaskResponse toUserTaskDto(UserTaskDto dto);
+  UserTaskResponse toUserTaskDto(DdmTaskDto dto);
 
   @IterableMapping(qualifiedByName = "toUserTaskDto")
-  List<UserTaskResponse> toUserTaskDtoList(List<UserTaskDto> dtos);
+  List<UserTaskResponse> toUserTaskDtoList(List<DdmTaskDto> dtos);
 
   /**
    * Method for converting {@link SignableDataUserTaskResponse} entity to {@link
@@ -54,7 +54,7 @@ public interface UserTaskDtoMapper {
    * @param signableUserTaskDto bpms task entity
    * @return a user task entity that can be signed
    */
-  SignableDataUserTaskResponse toSignableDataUserTaskDto(SignableUserTaskDto signableUserTaskDto);
+  SignableDataUserTaskResponse toSignableDataUserTaskDto(DdmSignableTaskDto signableUserTaskDto);
 
   CountResponse toCountResponse(CountResultDto dto);
 }
