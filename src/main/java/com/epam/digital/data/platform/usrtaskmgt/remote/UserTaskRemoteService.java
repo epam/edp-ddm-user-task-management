@@ -19,6 +19,7 @@ package com.epam.digital.data.platform.usrtaskmgt.remote;
 import com.epam.digital.data.platform.bpms.api.dto.DdmTaskDto;
 import com.epam.digital.data.platform.bpms.client.exception.TaskNotFoundException;
 import com.epam.digital.data.platform.usrtaskmgt.model.request.Pageable;
+import com.epam.digital.data.platform.usrtaskmgt.model.response.CompletedTaskResponse;
 import com.epam.digital.data.platform.usrtaskmgt.model.response.CountResponse;
 import com.epam.digital.data.platform.usrtaskmgt.model.response.SignableDataUserTaskResponse;
 import com.epam.digital.data.platform.usrtaskmgt.model.response.UserTaskResponse;
@@ -75,6 +76,7 @@ public interface UserTaskRemoteService {
    * Complete user task with specified id in Camunda
    *
    * @param taskId id of current task to complete
+   * @return {@link CompletedTaskResponse}
    */
-  void completeTaskById(@NonNull String taskId);
+  CompletedTaskResponse completeTaskById(@NonNull String taskId);
 }

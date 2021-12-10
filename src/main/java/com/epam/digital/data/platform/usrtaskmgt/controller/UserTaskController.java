@@ -22,8 +22,9 @@ import com.epam.digital.data.platform.starter.security.annotation.PreAuthorizeAn
 import com.epam.digital.data.platform.starter.security.annotation.PreAuthorizeCitizen;
 import com.epam.digital.data.platform.starter.security.annotation.PreAuthorizeOfficer;
 import com.epam.digital.data.platform.storage.form.dto.FormDataDto;
-import com.epam.digital.data.platform.usrtaskmgt.model.request.Pageable;
 import com.epam.digital.data.platform.usrtaskmgt.controller.swagger.PageableAsQueryParam;
+import com.epam.digital.data.platform.usrtaskmgt.model.request.Pageable;
+import com.epam.digital.data.platform.usrtaskmgt.model.response.CompletedTaskResponse;
 import com.epam.digital.data.platform.usrtaskmgt.model.response.CountResponse;
 import com.epam.digital.data.platform.usrtaskmgt.model.response.SignableDataUserTaskResponse;
 import com.epam.digital.data.platform.usrtaskmgt.model.response.UserTaskResponse;
@@ -84,9 +85,12 @@ public class UserTaskController {
   }
 
   @PostMapping("/task/{id}/complete")
-  @ResponseStatus(HttpStatus.NO_CONTENT)
+  @ResponseStatus(HttpStatus.OK)
   @Operation(summary = "Complete task by id")
-  @ApiResponse(description = "Task successfully completed", responseCode = "204")
+  @ApiResponse(
+      description = "Task successfully completed",
+      responseCode = "200",
+      content = @Content(schema = @Schema(implementation = CompletedTaskResponse.class)))
   @ApiResponse(
       description = "Task hasn't found",
       responseCode = "404",
@@ -95,16 +99,19 @@ public class UserTaskController {
       description = "Internal server error",
       responseCode = "500",
       content = @Content(schema = @Schema(implementation = SystemErrorDto.class)))
-  public void completeTaskById(@PathVariable("id") String taskId,
+  public CompletedTaskResponse completeTaskById(@PathVariable("id") String taskId,
       @RequestBody FormDataDto formDataDto, Authentication authentication) {
-    userTaskManagementService.completeTaskById(taskId, formDataDto, authentication);
+    return userTaskManagementService.completeTaskById(taskId, formDataDto, authentication);
   }
 
   @PreAuthorizeOfficer
   @PostMapping("/officer/task/{id}/sign-form")
-  @ResponseStatus(HttpStatus.NO_CONTENT)
+  @ResponseStatus(HttpStatus.OK)
   @Operation(summary = "Sign and complete officer task by id")
-  @ApiResponse(description = "Task successfully signed and completed", responseCode = "204")
+  @ApiResponse(
+      description = "Task successfully signed and completed",
+      responseCode = "200",
+      content = @Content(schema = @Schema(implementation = CompletedTaskResponse.class)))
   @ApiResponse(
       description = "Task hasn't found",
       responseCode = "404",
@@ -117,16 +124,19 @@ public class UserTaskController {
       description = "Internal server error",
       responseCode = "500",
       content = @Content(schema = @Schema(implementation = SystemErrorDto.class)))
-  public void singOfficerForm(@PathVariable("id") String taskId,
+  public CompletedTaskResponse singOfficerForm(@PathVariable("id") String taskId,
       @RequestBody FormDataDto formDataDto, Authentication authentication) {
-    userTaskManagementService.signOfficerForm(taskId, formDataDto, authentication);
+    return userTaskManagementService.signOfficerForm(taskId, formDataDto, authentication);
   }
 
   @PreAuthorizeCitizen
   @PostMapping("/citizen/task/{id}/sign-form")
-  @ResponseStatus(HttpStatus.NO_CONTENT)
+  @ResponseStatus(HttpStatus.OK)
   @Operation(summary = "Sign and complete citizen task by id")
-  @ApiResponse(description = "Task successfully signed and completed", responseCode = "204")
+  @ApiResponse(
+      description = "Task successfully signed and completed",
+      responseCode = "200",
+      content = @Content(schema = @Schema(implementation = CompletedTaskResponse.class)))
   @ApiResponse(
       description = "Task hasn't found",
       responseCode = "404",
@@ -139,10 +149,10 @@ public class UserTaskController {
       description = "Internal server error",
       responseCode = "500",
       content = @Content(schema = @Schema(implementation = SystemErrorDto.class)))
-  public void signCitizenForm(
+  public CompletedTaskResponse signCitizenForm(
       @PathVariable("id") String taskId, @RequestBody FormDataDto formDataDto,
       Authentication authentication) {
-    userTaskManagementService.signCitizenForm(taskId, formDataDto, authentication);
+    return userTaskManagementService.signCitizenForm(taskId, formDataDto, authentication);
   }
 
   @Operation(summary = "Claim task by id")

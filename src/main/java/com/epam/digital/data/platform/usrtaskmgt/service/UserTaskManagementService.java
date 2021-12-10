@@ -28,6 +28,7 @@ import com.epam.digital.data.platform.usrtaskmgt.exception.UserTaskAuthorization
 import com.epam.digital.data.platform.usrtaskmgt.exception.UserTaskNotExistsException;
 import com.epam.digital.data.platform.usrtaskmgt.exception.UserTaskNotExistsOrCompletedException;
 import com.epam.digital.data.platform.usrtaskmgt.model.request.Pageable;
+import com.epam.digital.data.platform.usrtaskmgt.model.response.CompletedTaskResponse;
 import com.epam.digital.data.platform.usrtaskmgt.model.response.CountResponse;
 import com.epam.digital.data.platform.usrtaskmgt.model.response.SignableDataUserTaskResponse;
 import com.epam.digital.data.platform.usrtaskmgt.model.response.UserTaskResponse;
@@ -175,17 +176,20 @@ public class UserTaskManagementService {
    * @param taskId         task identifier
    * @param formData       data to save to the ceph
    * @param authentication authentication object of current authenticated user
+   * @return {@link CompletedTaskResponse}
+   *
    * @see UserTaskManagementService#completeTask(String, FormDataDto, Authentication,
    * SignatureVerifier) Task completion method itself
    */
-  public void completeTaskById(@NonNull String taskId, @NonNull FormDataDto formData,
-      @NonNull Authentication authentication) {
+  public CompletedTaskResponse completeTaskById(@NonNull String taskId,
+      @NonNull FormDataDto formData, @NonNull Authentication authentication) {
     log.info("Completing user task with id {}", taskId);
 
-    completeTask(taskId, formData, authentication,
+    var result = completeTask(taskId, formData, authentication,
         SignatureVerifier.NO_SIGNATURE_VERIFICATION);
 
     log.info("Task {} is completed", taskId);
+    return result;
   }
 
   /**
@@ -194,17 +198,21 @@ public class UserTaskManagementService {
    * @param taskId         task identifier
    * @param formData       data to save to the ceph
    * @param authentication authentication object of current authenticated user
+   * @return {@link CompletedTaskResponse}
+   *
    * @see UserTaskManagementService#completeTask(String, FormDataDto, Authentication,
    * SignatureVerifier) Task completion method itself
    */
-  public void signOfficerForm(@NonNull String taskId, @NonNull FormDataDto formData,
+  public CompletedTaskResponse signOfficerForm(@NonNull String taskId,
+      @NonNull FormDataDto formData,
       @NonNull Authentication authentication) {
     log.info("Completing signable officer task with id {}", taskId);
 
-    completeTask(taskId, formData, authentication,
+    var result = completeTask(taskId, formData, authentication,
         (taskDto, data) -> digitalSignatureRemoteService.verifyOfficerFormData(data));
 
     log.info("Signable officer task {} is completed", taskId);
+    return result;
   }
 
   /**
@@ -213,17 +221,21 @@ public class UserTaskManagementService {
    * @param taskId         task identifier
    * @param formData       data to save to the ceph
    * @param authentication authentication object of current authenticated user
+   * @return {@link CompletedTaskResponse}
+   *
    * @see UserTaskManagementService#completeTask(String, FormDataDto, Authentication,
    * SignatureVerifier) Task completion method itself
    */
-  public void signCitizenForm(@NonNull String taskId, @NonNull FormDataDto formData,
+  public CompletedTaskResponse signCitizenForm(@NonNull String taskId,
+      @NonNull FormDataDto formData,
       @NonNull Authentication authentication) {
     log.info("Completing signable citizen task with id {}", taskId);
 
-    completeTask(taskId, formData, authentication,
+    var result = completeTask(taskId, formData, authentication,
         digitalSignatureRemoteService::verifyCitizenFormData);
 
     log.info("Signable citizen task {} is completed", taskId);
+    return result;
   }
 
   /**
@@ -246,9 +258,10 @@ public class UserTaskManagementService {
    * @throws UserTaskNotExistsException     if user task wasn't found
    * @throws UserTaskAuthorizationException if task is assigned to other user
    * @throws ValidationException            if form data hasn't passed the validation
+   * @return {@link CompletedTaskResponse}
    */
-  private void completeTask(String taskId, FormDataDto formData, Authentication authentication,
-      SignatureVerifier signatureVerifier) {
+  private CompletedTaskResponse completeTask(String taskId, FormDataDto formData,
+      Authentication authentication, SignatureVerifier signatureVerifier) {
     log.debug("Completing user task {}", taskId);
 
     var taskDto = getUserTaskOrThrowTaskNotExistsException(taskId);
@@ -270,8 +283,10 @@ public class UserTaskManagementService {
         formData);
     log.trace("Form data is saved");
 
-    userTaskRemoteService.completeTaskById(taskId);
+    var result = userTaskRemoteService.completeTaskById(taskId);
+
     log.debug("User task {} successfully completed", taskId);
+    return result;
   }
 
   private void throwExceptionIfUserTaskIsNotAssignedToCurrentUser(

@@ -25,11 +25,14 @@ import com.epam.digital.data.platform.bpms.client.exception.TaskNotFoundExceptio
 import com.epam.digital.data.platform.starter.errorhandling.BaseRestExceptionHandler;
 import com.epam.digital.data.platform.starter.errorhandling.dto.SystemErrorDto;
 import com.epam.digital.data.platform.starter.localization.MessageResolver;
+import com.epam.digital.data.platform.storage.form.dto.FormDataDto;
 import com.epam.digital.data.platform.usrtaskmgt.controller.config.CustomMockMvcConfigurer;
-import com.epam.digital.data.platform.usrtaskmgt.i18n.UserTaskManagementMessage;
 import com.epam.digital.data.platform.usrtaskmgt.exception.UserTaskAlreadyAssignedException;
 import com.epam.digital.data.platform.usrtaskmgt.exception.UserTaskNotExistsOrCompletedException;
+import com.epam.digital.data.platform.usrtaskmgt.i18n.UserTaskManagementMessage;
 import com.epam.digital.data.platform.usrtaskmgt.model.request.Pageable;
+import com.epam.digital.data.platform.usrtaskmgt.model.response.CompletedTaskResponse;
+import com.epam.digital.data.platform.usrtaskmgt.model.response.CompletedTaskResponse.VariableValueResponse;
 import com.epam.digital.data.platform.usrtaskmgt.model.response.CountResponse;
 import com.epam.digital.data.platform.usrtaskmgt.model.response.HistoryUserTaskResponse;
 import com.epam.digital.data.platform.usrtaskmgt.model.response.SignableDataUserTaskResponse;
@@ -41,7 +44,9 @@ import io.restassured.module.mockmvc.RestAssuredMockMvc;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -66,7 +71,7 @@ public abstract class BaseControllerTest {
   private MessageResolver messageResolver;
 
   @BeforeEach
-  public void init() {
+  void init() {
     MDC.put(BaseRestExceptionHandler.TRACE_ID_KEY, "traceId");
 
     RestAssuredMockMvc.standaloneSetup(
@@ -79,13 +84,16 @@ public abstract class BaseControllerTest {
     mockGetTasksByProcessInstanceId();
     mockGetHistoryTasks();
     mockClaimTaskById();
+    mockCompleteTask();
+    mockSignOfficerTask();
+    mockSignCitizenTask();
   }
 
-  public void mockCount() {
+  void mockCount() {
     lenient().when(userTaskManagementService.countTasks(any())).thenReturn(new CountResponse(22L));
   }
 
-  public void mockGetById() {
+  void mockGetById() {
     var taskById = new SignableDataUserTaskResponse("testId", "taskDefinitionKey", "testTaskName",
         "testAssignee", LocalDateTime.of(LocalDate.of(2020, 12, 12), LocalTime.of(13, 3, 22)),
         "testDesc", "testProcessInstanceId", "testProcessDefinitionId", "testProcess",
@@ -95,7 +103,7 @@ public abstract class BaseControllerTest {
     lenient().when(userTaskManagementService.getTaskById(eq("testId"), any())).thenReturn(taskById);
   }
 
-  public void mockGetTasks() {
+  void mockGetTasks() {
     var task1 = UserTaskResponse.builder()
         .id("testId")
         .taskDefinitionKey("taskDefinitionKey")
@@ -127,7 +135,7 @@ public abstract class BaseControllerTest {
         .thenReturn(List.of(task1, task2));
   }
 
-  public void mockGetTasksByProcessInstanceId() {
+  void mockGetTasksByProcessInstanceId() {
     var task = UserTaskResponse.builder()
         .id("testId")
         .taskDefinitionKey("taskDefinitionKey")
@@ -146,7 +154,7 @@ public abstract class BaseControllerTest {
         .thenReturn(List.of(task));
   }
 
-  public void mockGetHistoryTasks() {
+  void mockGetHistoryTasks() {
     var task1 = HistoryUserTaskResponse.builder()
         .id("testId")
         .name("testTaskName")
@@ -173,9 +181,9 @@ public abstract class BaseControllerTest {
         .thenReturn(List.of(task1, task2));
   }
 
-  public void mockClaimTaskById() {
+  void mockClaimTaskById() {
     lenient().when(
-        messageResolver.getMessage(UserTaskManagementMessage.USER_TASK_NOT_EXISTS_OR_COMPLETED))
+            messageResolver.getMessage(UserTaskManagementMessage.USER_TASK_NOT_EXISTS_OR_COMPLETED))
         .thenReturn("404 localizedMessage");
 
     lenient().doThrow(
@@ -208,5 +216,61 @@ public abstract class BaseControllerTest {
                     .build()))
         .when(userTaskManagementService)
         .claimTaskById(eq("testId500"), any());
+  }
+
+  void mockCompleteTask() {
+    var formData = FormDataDto.builder()
+        .data(new LinkedHashMap<>(Map.of("testVar", "testValue")))
+        .build();
+
+    lenient()
+        .when(userTaskManagementService.completeTaskById(eq("taskIdToComplete"),
+            eq(formData), any()))
+        .thenReturn(CompletedTaskResponse.builder()
+            .id("taskIdToComplete")
+            .processInstanceId("process-instance")
+            .rootProcessInstanceId("root-process-instance")
+            .rootProcessInstanceEnded(true)
+            .variables(Map.of("responseVar",
+                VariableValueResponse.builder().value("responseValue").build()))
+            .build());
+  }
+
+  void mockSignOfficerTask() {
+    var formData = FormDataDto.builder()
+        .data(new LinkedHashMap<>(Map.of("testVar", "testValue")))
+        .signature("eSign")
+        .build();
+
+    lenient()
+        .when(userTaskManagementService.signOfficerForm(eq("taskIdToSignByOfficer"),
+            eq(formData), any()))
+        .thenReturn(CompletedTaskResponse.builder()
+            .id("taskIdToSignByOfficer")
+            .processInstanceId("process-instance")
+            .rootProcessInstanceId("root-process-instance")
+            .rootProcessInstanceEnded(true)
+            .variables(Map.of("responseVar",
+                VariableValueResponse.builder().value("responseValue").build()))
+            .build());
+  }
+
+  void mockSignCitizenTask() {
+    var formData = FormDataDto.builder()
+        .data(new LinkedHashMap<>(Map.of("testVar", "testValue")))
+        .signature("eSign")
+        .build();
+
+    lenient()
+        .when(userTaskManagementService.signCitizenForm(eq("taskIdToSignByCitizen"),
+            eq(formData), any()))
+        .thenReturn(CompletedTaskResponse.builder()
+            .id("taskIdToSignByCitizen")
+            .processInstanceId("process-instance")
+            .rootProcessInstanceId("root-process-instance")
+            .rootProcessInstanceEnded(true)
+            .variables(Map.of("responseVar",
+                VariableValueResponse.builder().value("responseValue").build()))
+            .build());
   }
 }

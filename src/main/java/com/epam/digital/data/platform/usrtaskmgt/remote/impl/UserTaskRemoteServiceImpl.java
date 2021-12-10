@@ -17,14 +17,15 @@
 package com.epam.digital.data.platform.usrtaskmgt.remote.impl;
 
 import com.epam.digital.data.platform.bpms.api.dto.DdmClaimTaskQueryDto;
-import com.epam.digital.data.platform.bpms.api.dto.PaginationQueryDto;
-import com.epam.digital.data.platform.bpms.api.dto.SortingDto;
+import com.epam.digital.data.platform.bpms.api.dto.DdmCompleteTaskDto;
 import com.epam.digital.data.platform.bpms.api.dto.DdmTaskCountQueryDto;
 import com.epam.digital.data.platform.bpms.api.dto.DdmTaskQueryDto;
-import com.epam.digital.data.platform.bpms.client.CamundaTaskRestClient;
-import com.epam.digital.data.platform.bpms.client.ExtendedUserTaskRestClient;
+import com.epam.digital.data.platform.bpms.api.dto.PaginationQueryDto;
+import com.epam.digital.data.platform.bpms.api.dto.SortingDto;
+import com.epam.digital.data.platform.bpms.client.TaskRestClient;
 import com.epam.digital.data.platform.usrtaskmgt.mapper.UserTaskDtoMapper;
 import com.epam.digital.data.platform.usrtaskmgt.model.request.Pageable;
+import com.epam.digital.data.platform.usrtaskmgt.model.response.CompletedTaskResponse;
 import com.epam.digital.data.platform.usrtaskmgt.model.response.CountResponse;
 import com.epam.digital.data.platform.usrtaskmgt.model.response.SignableDataUserTaskResponse;
 import com.epam.digital.data.platform.usrtaskmgt.model.response.UserTaskResponse;
@@ -32,7 +33,6 @@ import com.epam.digital.data.platform.usrtaskmgt.remote.UserTaskRemoteService;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.camunda.bpm.engine.rest.dto.task.CompleteTaskDto;
 import org.springframework.lang.NonNull;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
@@ -42,8 +42,7 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class UserTaskRemoteServiceImpl implements UserTaskRemoteService {
 
-  private final CamundaTaskRestClient camundaTaskRestClient;
-  private final ExtendedUserTaskRestClient extendedUserTaskRestClient;
+  private final TaskRestClient taskRestClient;
   private final UserTaskDtoMapper userTaskDtoMapper;
 
   @Override
@@ -71,7 +70,7 @@ public class UserTaskRemoteServiceImpl implements UserTaskRemoteService {
         .maxResults(page.getMaxResults())
         .build();
 
-    var dtos = extendedUserTaskRestClient.getTasksByParams(taskQueryDto, paginationQueryDto);
+    var dtos = taskRestClient.getTasksByParams(taskQueryDto, paginationQueryDto);
 
     log.debug("{} user tasks were found", dtos.size());
     return userTaskDtoMapper.toUserTaskDtoList(dtos);
@@ -89,7 +88,7 @@ public class UserTaskRemoteServiceImpl implements UserTaskRemoteService {
     var taskCountQueryDto = DdmTaskCountQueryDto.builder()
         .orQueries(List.of(unassignedCountTaskQuery))
         .build();
-    var dto = camundaTaskRestClient.getTaskCountByParams(taskCountQueryDto);
+    var dto = taskRestClient.getTaskCountByParams(taskCountQueryDto);
 
     log.debug("Found {} user tasks", dto.getCount());
     return userTaskDtoMapper.toCountResponse(dto);
@@ -100,12 +99,12 @@ public class UserTaskRemoteServiceImpl implements UserTaskRemoteService {
   public SignableDataUserTaskResponse getUserTaskById(@NonNull String taskId) {
     log.debug("Selecting user task by id {}", taskId);
 
-    var taskDto = extendedUserTaskRestClient.getUserTaskById(taskId);
+    var taskDto = taskRestClient.getTaskById(taskId);
     log.trace("User task {} was found - {}", taskId, taskDto);
 
     var userTask = userTaskDtoMapper.toSignableDataUserTaskDto(taskDto);
 
-    log.trace("User task was mapped to user task dto {}", userTask);
+    log.debug("User task by id {} selected. {}", taskId, userTask);
     return userTask;
   }
 
@@ -116,15 +115,18 @@ public class UserTaskRemoteServiceImpl implements UserTaskRemoteService {
     var claimTaskDto = DdmClaimTaskQueryDto.builder()
         .userId(userName)
         .build();
-    camundaTaskRestClient.claimTaskById(taskId, claimTaskDto);
+    taskRestClient.claimTaskById(taskId, claimTaskDto);
 
     log.debug("Task with id {} was claimed by {}", taskId, userName);
   }
 
   @Override
-  public void completeTaskById(@NonNull String taskId) {
+  public CompletedTaskResponse completeTaskById(@NonNull String taskId) {
     log.debug("Completing task with id {}", taskId);
-    camundaTaskRestClient.completeTaskById(taskId, new CompleteTaskDto());
+
+    var result = taskRestClient.completeTaskById(taskId, DdmCompleteTaskDto.builder().build());
+
     log.debug("Task with id {} was completed", taskId);
+    return userTaskDtoMapper.toCompletedTaskResponse(result);
   }
 }
