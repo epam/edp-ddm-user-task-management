@@ -11,12 +11,12 @@
   </parent>
 
   <artifactId>user-task-management</artifactId>
-  <version>1.5.3-SNAPSHOT</version>
+  <version>1.5.4-SNAPSHOT</version>
   <name>user-task-management</name>
   <description>User task management service</description>
 
   <properties>
-    <bpm.api.version>1.5.3-SNAPSHOT</bpm.api.version>
+    <bpm.api.version>1.5.5-SNAPSHOT</bpm.api.version>
     <ddm-form-data-storage.version>1.5.0-SNAPSHOT</ddm-form-data-storage.version>
     <ddm-starter-security.version>1.5.0-SNAPSHOT</ddm-starter-security.version>
     <ddm-starter-validation.version>1.5.1-SNAPSHOT</ddm-starter-validation.version>

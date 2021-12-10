@@ -28,6 +28,8 @@ import com.epam.digital.data.platform.starter.errorhandling.dto.SystemErrorDto;
 import com.epam.digital.data.platform.starter.errorhandling.dto.ValidationErrorDto;
 import com.epam.digital.data.platform.usrtaskmgt.BaseIT;
 import com.epam.digital.data.platform.usrtaskmgt.model.StubRequest;
+import com.epam.digital.data.platform.usrtaskmgt.model.response.CompletedTaskResponse;
+import com.epam.digital.data.platform.usrtaskmgt.model.response.CompletedTaskResponse.VariableValueResponse;
 import com.epam.digital.data.platform.usrtaskmgt.model.response.CountResponse;
 import com.epam.digital.data.platform.usrtaskmgt.model.response.SignableDataUserTaskResponse;
 import java.time.LocalDateTime;
@@ -199,13 +201,28 @@ class UserTaskControllerIT extends BaseIT {
     mockGetForm();
     mockValidationFormData("{}");
 
-    mockCompleteTask(200, "{}");
+    mockCompleteTask(200, "{\"id\":\"" + TASK_ID + "\","
+        + "\"processInstanceId\":\"" + processInstanceId + "\","
+        + "\"rootProcessInstanceId\":\"" + processInstanceId + "\","
+        + "\"rootProcessInstanceEnded\":false,"
+        + "\"variables\":{\"var1\":{\"value\":\"variableValue\"}}}");
 
     var request = post("/api/task/" + TASK_ID + "/complete")
         .accept(MediaType.APPLICATION_JSON_VALUE).contentType("application/json")
         .content(payload);
 
-    performWithTokenOfficerRole(request).andExpect(status().is2xxSuccessful());
+    var response = performWithTokenOfficerRole(request).andExpect(status().is2xxSuccessful())
+        .andReturn().getResponse().getContentAsString();
+
+    var expected = CompletedTaskResponse.builder()
+        .id(TASK_ID)
+        .processInstanceId(processInstanceId)
+        .rootProcessInstanceId(processInstanceId)
+        .rootProcessInstanceEnded(false)
+        .variables(Map.of("var1", VariableValueResponse.builder().value("variableValue").build()))
+        .build();
+    var actual = objectMapper.readValue(response, CompletedTaskResponse.class);
+    assertThat(actual).isEqualTo(expected);
   }
 
   @Test
@@ -224,13 +241,28 @@ class UserTaskControllerIT extends BaseIT {
 
     mockOfficerDigitalSignature(200, "{\"valid\":true}");
 
-    mockCompleteTask(200, "{}");
+    mockCompleteTask(200, "{\"id\":\"" + TASK_ID + "\","
+        + "\"processInstanceId\":\"" + processInstanceId + "\","
+        + "\"rootProcessInstanceId\":\"" + processInstanceId + "\","
+        + "\"rootProcessInstanceEnded\":true,"
+        + "\"variables\":{\"var1\":{\"value\":\"variableValue\"}}}");
 
     var request = post("/api/officer/task/" + TASK_ID + "/sign-form")
         .accept(MediaType.APPLICATION_JSON_VALUE).contentType("application/json")
         .content(payload);
 
-    performWithTokenOfficerRole(request).andExpect(status().is2xxSuccessful());
+    var response = performWithTokenOfficerRole(request).andExpect(status().is2xxSuccessful())
+        .andReturn().getResponse().getContentAsString();
+
+    var expected = CompletedTaskResponse.builder()
+        .id(TASK_ID)
+        .processInstanceId(processInstanceId)
+        .rootProcessInstanceId(processInstanceId)
+        .rootProcessInstanceEnded(true)
+        .variables(Map.of("var1", VariableValueResponse.builder().value("variableValue").build()))
+        .build();
+    var actual = objectMapper.readValue(response, CompletedTaskResponse.class);
+    assertThat(actual).isEqualTo(expected);
   }
 
   @Test
@@ -277,13 +309,28 @@ class UserTaskControllerIT extends BaseIT {
         equalToJson("[\"ENTREPRENEUR\"]"));
     mockCitizenDigitalSignature(requestBody, 200, "{\"valid\":true}");
 
-    mockCompleteTask(200, "{}");
+    mockCompleteTask(200, "{\"id\":\"" + TASK_ID + "\","
+        + "\"processInstanceId\":\"" + processInstanceId + "\","
+        + "\"rootProcessInstanceId\":\"" + processInstanceId + "\","
+        + "\"rootProcessInstanceEnded\":false,"
+        + "\"variables\":{\"var1\":{\"value\":\"variableValue\"}}}");
 
     var request = post("/api/citizen/task/" + TASK_ID + "/sign-form")
         .accept(MediaType.APPLICATION_JSON_VALUE).contentType("application/json")
         .content(payload);
 
-    performWithTokenCitizenRole(request).andExpect(status().is2xxSuccessful());
+    var response = performWithTokenCitizenRole(request).andExpect(status().is2xxSuccessful())
+        .andReturn().getResponse().getContentAsString();
+
+    var expected = CompletedTaskResponse.builder()
+        .id(TASK_ID)
+        .processInstanceId(processInstanceId)
+        .rootProcessInstanceId(processInstanceId)
+        .rootProcessInstanceEnded(false)
+        .variables(Map.of("var1", VariableValueResponse.builder().value("variableValue").build()))
+        .build();
+    var actual = objectMapper.readValue(response, CompletedTaskResponse.class);
+    assertThat(actual).isEqualTo(expected);
   }
 
   @Test
@@ -304,13 +351,28 @@ class UserTaskControllerIT extends BaseIT {
         equalToJson("[\"INDIVIDUAL\"]"));
     mockCitizenDigitalSignature(requestBody, 200, "{\"valid\":true}");
 
-    mockCompleteTask(200, "{}");
+    mockCompleteTask(200, "{\"id\":\"" + TASK_ID + "\","
+        + "\"processInstanceId\":\"" + processInstanceId + "\","
+        + "\"rootProcessInstanceId\":\"" + processInstanceId + "\","
+        + "\"rootProcessInstanceEnded\":false,"
+        + "\"variables\":{\"var1\":{\"value\":\"variableValue\"}}}");
 
     var request = post("/api/citizen/task/" + TASK_ID + "/sign-form")
         .accept(MediaType.APPLICATION_JSON_VALUE).contentType("application/json")
         .content(payload);
 
-    performWithTokenCitizenRole(request).andExpect(status().is2xxSuccessful());
+    var response = performWithTokenCitizenRole(request).andExpect(status().is2xxSuccessful())
+        .andReturn().getResponse().getContentAsString();
+
+    var expected = CompletedTaskResponse.builder()
+        .id(TASK_ID)
+        .processInstanceId(processInstanceId)
+        .rootProcessInstanceId(processInstanceId)
+        .rootProcessInstanceEnded(false)
+        .variables(Map.of("var1", VariableValueResponse.builder().value("variableValue").build()))
+        .build();
+    var actual = objectMapper.readValue(response, CompletedTaskResponse.class);
+    assertThat(actual).isEqualTo(expected);
   }
 
   @Test
@@ -487,7 +549,7 @@ class UserTaskControllerIT extends BaseIT {
 
   private void mockCompleteTask(int status, String body) {
     mockBpmsRequest(StubRequest.builder()
-        .path(String.format("/api/task/%s/complete", TASK_ID))
+        .path(String.format("/api/extended/task/%s/complete", TASK_ID))
         .method(HttpMethod.POST)
         .status(status)
         .responseBody(body)
