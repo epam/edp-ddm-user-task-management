@@ -3,12 +3,14 @@
     "id": "task1",
     "processDefinitionId": "pdId1",
     "processDefinitionName": "testName",
-    "suspended": false
+    "suspended": false,
+    "businessKey": "businessKey"
   },
   {
     "id": "task2",
     "processDefinitionId": "pdId2",
     "processDefinitionName": "testName",
-    "suspended": true
+    "suspended": true,
+    "businessKey": null
   }
 ]

@@ -97,12 +97,14 @@ class UserTaskControllerIT extends BaseIT {
         .hasFieldOrPropertyWithValue("id", "task1")
         .hasFieldOrPropertyWithValue("processDefinitionId", "pdId1")
         .hasFieldOrPropertyWithValue("processDefinitionName", "testName")
-        .hasFieldOrPropertyWithValue("suspended", false);
+        .hasFieldOrPropertyWithValue("suspended", false)
+        .hasFieldOrPropertyWithValue("businessKey", "businessKey");
     assertThat(userTaskDtos.get(1))
         .hasFieldOrPropertyWithValue("id", "task2")
         .hasFieldOrPropertyWithValue("processDefinitionId", "pdId2")
         .hasFieldOrPropertyWithValue("processDefinitionName", "testName")
-        .hasFieldOrPropertyWithValue("suspended", true);
+        .hasFieldOrPropertyWithValue("suspended", true)
+        .hasFieldOrPropertyWithValue("businessKey", null);
   }
 
   @Test
