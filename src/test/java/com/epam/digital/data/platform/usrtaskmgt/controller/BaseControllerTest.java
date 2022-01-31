@@ -116,6 +116,7 @@ public abstract class BaseControllerTest {
         .processDefinitionId("testProcessDefinitionId")
         .formKey("testFormKey")
         .suspended(false)
+        .businessKey("businessKey")
         .build();
     var task2 = UserTaskResponse.builder()
         .id("testId2")
@@ -129,6 +130,7 @@ public abstract class BaseControllerTest {
         .processDefinitionId("testProcessDefinitionId2")
         .formKey("testFormKey2")
         .suspended(true)
+        .businessKey(null)
         .build();
 
     lenient().when(userTaskManagementService.getTasks(eq(null), eq(Pageable.builder().build()), any()))
