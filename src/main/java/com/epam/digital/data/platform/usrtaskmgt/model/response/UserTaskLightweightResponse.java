@@ -12,4 +12,5 @@ import lombok.NoArgsConstructor;
 public class UserTaskLightweightResponse {
 
   private String id;
+  private String assignee;
 }
