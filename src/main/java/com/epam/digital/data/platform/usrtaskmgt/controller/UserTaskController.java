@@ -72,7 +72,8 @@ public class UserTaskController {
       @RequestParam(required = false) String rootProcessInstanceId,
       @Parameter(hidden = true) Pageable pageable, Authentication authentication) {
     var tasks = userTaskManagementService.getTasks(rootProcessInstanceId, pageable, authentication);
-    return tasks.stream().map(t -> UserTaskLightweightResponse.builder().id(t.getId()).build())
+    return tasks.stream().map(
+            t -> UserTaskLightweightResponse.builder().id(t.getId()).assignee(t.getAssignee()).build())
         .collect(Collectors.toList());
   }
 

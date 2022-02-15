@@ -123,9 +123,11 @@ class UserTaskControllerIT extends BaseIT {
 
     assertThat(userTaskDtos).hasSize(2);
     assertThat(userTaskDtos.get(0))
-        .hasFieldOrPropertyWithValue("id", "task1");
+        .hasFieldOrPropertyWithValue("id", "task1")
+        .hasFieldOrPropertyWithValue("assignee", "testuser");
     assertThat(userTaskDtos.get(1))
-        .hasFieldOrPropertyWithValue("id", "task2");
+        .hasFieldOrPropertyWithValue("id", "task2")
+        .hasFieldOrPropertyWithValue("assignee", "testuser");
   }
 
   @Test
