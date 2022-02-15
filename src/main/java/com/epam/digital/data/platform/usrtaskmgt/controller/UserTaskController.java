@@ -27,6 +27,7 @@ import com.epam.digital.data.platform.usrtaskmgt.model.request.Pageable;
 import com.epam.digital.data.platform.usrtaskmgt.model.response.CompletedTaskResponse;
 import com.epam.digital.data.platform.usrtaskmgt.model.response.CountResponse;
 import com.epam.digital.data.platform.usrtaskmgt.model.response.SignableDataUserTaskResponse;
+import com.epam.digital.data.platform.usrtaskmgt.model.response.UserTaskLightweightResponse;
 import com.epam.digital.data.platform.usrtaskmgt.model.response.UserTaskResponse;
 import com.epam.digital.data.platform.usrtaskmgt.service.UserTaskManagementService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -35,6 +36,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import java.util.List;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
@@ -61,6 +63,17 @@ public class UserTaskController {
   public List<UserTaskResponse> getTasks(@RequestParam(required = false) String processInstanceId,
       @Parameter(hidden = true) Pageable pageable, Authentication authentication) {
     return userTaskManagementService.getTasks(processInstanceId, pageable, authentication);
+  }
+
+  @GetMapping("/task/lightweight")
+  @Operation(summary = "Retrieve all tasks", description = "Returns lightweight task list")
+  @PageableAsQueryParam
+  public List<UserTaskLightweightResponse> getLightweightTasks(
+      @RequestParam(required = false) String rootProcessInstanceId,
+      @Parameter(hidden = true) Pageable pageable, Authentication authentication) {
+    var tasks = userTaskManagementService.getTasks(rootProcessInstanceId, pageable, authentication);
+    return tasks.stream().map(t -> UserTaskLightweightResponse.builder().id(t.getId()).build())
+        .collect(Collectors.toList());
   }
 
   @GetMapping("/task/{id}")

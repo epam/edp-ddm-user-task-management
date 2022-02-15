@@ -108,6 +108,27 @@ class UserTaskControllerIT extends BaseIT {
   }
 
   @Test
+  void shouldGetLightweightTasks() {
+    mockBpmsRequest(StubRequest.builder()
+        .path("/api/extended/task")
+        .method(HttpMethod.POST)
+        .status(200)
+        .responseBody(fileContent("/json/getTasksResponse.json"))
+        .responseHeaders(Map.of("Content-Type", List.of("application/json")))
+        .build());
+
+    var request = get("/api/task/lightweight")
+        .accept(MediaType.APPLICATION_JSON_VALUE);
+    var userTaskDtos = Arrays.asList(performForObjectAsOfficer(request, DdmTaskDto[].class));
+
+    assertThat(userTaskDtos).hasSize(2);
+    assertThat(userTaskDtos.get(0))
+        .hasFieldOrPropertyWithValue("id", "task1");
+    assertThat(userTaskDtos.get(1))
+        .hasFieldOrPropertyWithValue("id", "task2");
+  }
+
+  @Test
   void shouldGetTaskById_noCephConnection() {
     mockGetExtendedTask(fileContent("/json/getSignableTaskWithFormVariablesResponse.json"));
 
