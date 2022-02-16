@@ -31,6 +31,7 @@ import com.epam.digital.data.platform.usrtaskmgt.model.request.Pageable;
 import com.epam.digital.data.platform.usrtaskmgt.model.response.CompletedTaskResponse;
 import com.epam.digital.data.platform.usrtaskmgt.model.response.CountResponse;
 import com.epam.digital.data.platform.usrtaskmgt.model.response.SignableDataUserTaskResponse;
+import com.epam.digital.data.platform.usrtaskmgt.model.response.UserTaskLightweightResponse;
 import com.epam.digital.data.platform.usrtaskmgt.model.response.UserTaskResponse;
 import com.epam.digital.data.platform.usrtaskmgt.remote.DigitalSignatureRemoteService;
 import com.epam.digital.data.platform.usrtaskmgt.remote.UserTaskRemoteService;
@@ -96,6 +97,32 @@ public class UserTaskManagementService {
     var tasks = userTaskRemoteService.getUserTasks(processInstanceId, authentication.getName(),
         page);
     log.trace("Found user tasks - {}", tasks);
+
+    log.info("Found {} user tasks", tasks.size());
+    return tasks;
+  }
+
+  /**
+   * Getting list of lightweight user task entities of particular root process instance (if root
+   * process instance isn't present then gets all user tasks). It supports tasks from sub processes
+   * related to provide root process instance id.
+   *
+   * @param rootProcessInstanceId root process instance identifier (nullable)
+   * @param page                  specifies the index of the first result, the maximum number of
+   *                              results and result sorting criteria and order
+   * @param authentication        authentication object of current authenticated user
+   * @return the list of user tasks
+   */
+  @NonNull
+  public List<UserTaskLightweightResponse> getLightweightTasks(
+      @Nullable String rootProcessInstanceId,
+      @NonNull Pageable page, @NonNull Authentication authentication) {
+    log.info("Getting unfinished lightweight user tasks for root process instance {}. "
+        + "Parameters: {}", rootProcessInstanceId, page);
+
+    var tasks = userTaskRemoteService.getLightweightUserTasks(rootProcessInstanceId,
+        authentication.getName(), page);
+    log.trace("Found lightweight user tasks - {}", tasks);
 
     log.info("Found {} user tasks", tasks.size());
     return tasks;
@@ -177,7 +204,6 @@ public class UserTaskManagementService {
    * @param formData       data to save to the ceph
    * @param authentication authentication object of current authenticated user
    * @return {@link CompletedTaskResponse}
-   *
    * @see UserTaskManagementService#completeTask(String, FormDataDto, Authentication,
    * SignatureVerifier) Task completion method itself
    */
@@ -199,7 +225,6 @@ public class UserTaskManagementService {
    * @param formData       data to save to the ceph
    * @param authentication authentication object of current authenticated user
    * @return {@link CompletedTaskResponse}
-   *
    * @see UserTaskManagementService#completeTask(String, FormDataDto, Authentication,
    * SignatureVerifier) Task completion method itself
    */
@@ -222,7 +247,6 @@ public class UserTaskManagementService {
    * @param formData       data to save to the ceph
    * @param authentication authentication object of current authenticated user
    * @return {@link CompletedTaskResponse}
-   *
    * @see UserTaskManagementService#completeTask(String, FormDataDto, Authentication,
    * SignatureVerifier) Task completion method itself
    */

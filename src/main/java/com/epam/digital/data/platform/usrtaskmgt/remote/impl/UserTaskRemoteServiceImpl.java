@@ -28,6 +28,7 @@ import com.epam.digital.data.platform.usrtaskmgt.model.request.Pageable;
 import com.epam.digital.data.platform.usrtaskmgt.model.response.CompletedTaskResponse;
 import com.epam.digital.data.platform.usrtaskmgt.model.response.CountResponse;
 import com.epam.digital.data.platform.usrtaskmgt.model.response.SignableDataUserTaskResponse;
+import com.epam.digital.data.platform.usrtaskmgt.model.response.UserTaskLightweightResponse;
 import com.epam.digital.data.platform.usrtaskmgt.model.response.UserTaskResponse;
 import com.epam.digital.data.platform.usrtaskmgt.remote.UserTaskRemoteService;
 import java.util.List;
@@ -52,19 +53,7 @@ public class UserTaskRemoteServiceImpl implements UserTaskRemoteService {
     log.debug("Getting assigned to current user or unassigned user tasks of process instance {}. "
         + "Paging and sorting params - {}", processInstanceId, page);
 
-    var unassignedTaskQuery = DdmTaskQueryDto.builder()
-        .unassigned(true)
-        .assignee(assignee)
-        .build();
-    var sortingDto = SortingDto.builder()
-        .sortBy(page.getSortBy())
-        .sortOrder(page.getSortOrder())
-        .build();
-    var taskQueryDto = DdmTaskQueryDto.builder()
-        .processInstanceId(processInstanceId)
-        .orQueries(List.of(unassignedTaskQuery))
-        .sorting(List.of(sortingDto))
-        .build();
+    var taskQueryDto = buildDdmTaskQueryDto(processInstanceId, assignee, page);
     var paginationQueryDto = PaginationQueryDto.builder()
         .firstResult(page.getFirstResult())
         .maxResults(page.getMaxResults())
@@ -74,6 +63,25 @@ public class UserTaskRemoteServiceImpl implements UserTaskRemoteService {
 
     log.debug("{} user tasks were found", dtos.size());
     return userTaskDtoMapper.toUserTaskDtoList(dtos);
+  }
+
+  @Override
+  @NonNull
+  public List<UserTaskLightweightResponse> getLightweightUserTasks(String rootProcessInstanceId,
+      String assignee, Pageable page) {
+    log.debug("Getting assigned to current user or unassigned lightweight user tasks of "
+        + "root process instance {}. Paging and sorting params - {}", rootProcessInstanceId, page);
+
+    var taskQueryDto = buildDdmTaskQueryDto(rootProcessInstanceId, assignee, page);
+    var paginationQueryDto = PaginationQueryDto.builder()
+        .firstResult(page.getFirstResult())
+        .maxResults(page.getMaxResults())
+        .build();
+
+    var dtos = taskRestClient.getLightweightTasksByParams(taskQueryDto, paginationQueryDto);
+
+    log.debug("{} user tasks were found", dtos.size());
+    return userTaskDtoMapper.toUserTaskLightweightResponse(dtos);
   }
 
   @Override
@@ -128,5 +136,22 @@ public class UserTaskRemoteServiceImpl implements UserTaskRemoteService {
 
     log.debug("Task with id {} was completed", taskId);
     return userTaskDtoMapper.toCompletedTaskResponse(result);
+  }
+
+  private DdmTaskQueryDto buildDdmTaskQueryDto(String processInstanceId, String assignee,
+      Pageable page) {
+    var unassignedTaskQuery = DdmTaskQueryDto.builder()
+        .unassigned(true)
+        .assignee(assignee)
+        .build();
+    var sortingDto = SortingDto.builder()
+        .sortBy(page.getSortBy())
+        .sortOrder(page.getSortOrder())
+        .build();
+    return DdmTaskQueryDto.builder()
+        .processInstanceId(processInstanceId)
+        .orQueries(List.of(unassignedTaskQuery))
+        .sorting(List.of(sortingDto))
+        .build();
   }
 }

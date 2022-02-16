@@ -22,6 +22,7 @@ import com.epam.digital.data.platform.usrtaskmgt.model.request.Pageable;
 import com.epam.digital.data.platform.usrtaskmgt.model.response.CompletedTaskResponse;
 import com.epam.digital.data.platform.usrtaskmgt.model.response.CountResponse;
 import com.epam.digital.data.platform.usrtaskmgt.model.response.SignableDataUserTaskResponse;
+import com.epam.digital.data.platform.usrtaskmgt.model.response.UserTaskLightweightResponse;
 import com.epam.digital.data.platform.usrtaskmgt.model.response.UserTaskResponse;
 import java.util.List;
 import org.springframework.lang.NonNull;
@@ -45,6 +46,19 @@ public interface UserTaskRemoteService {
       @NonNull Pageable page);
 
   /**
+   * Getting assigned to current user or unassigned user tasks of specific root process instance.
+   * (if it's present, else will be returned list of tasks for all process instances). It supports
+   * tasks from sub processes related to provide root process instance id.
+   *
+   * @param rootProcessInstanceId id of current root process instance
+   * @param page                  paging and sorting properties
+   * @return the list of lightweight user tasks
+   */
+  @NonNull
+  List<UserTaskLightweightResponse> getLightweightUserTasks(@Nullable String rootProcessInstanceId,
+      @NonNull String assignee, @NonNull Pageable page);
+
+  /**
    * Getting count of assigned to current user or unassigned user tasks
    *
    * @return the count of user tasks
@@ -58,7 +72,6 @@ public interface UserTaskRemoteService {
    *
    * @param taskId id of current task
    * @return user task object
-   *
    * @throws TaskNotFoundException if user task with this id is not exists
    */
   @NonNull
