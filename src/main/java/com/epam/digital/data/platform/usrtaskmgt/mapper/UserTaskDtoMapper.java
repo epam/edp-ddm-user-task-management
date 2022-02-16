@@ -18,11 +18,13 @@ package com.epam.digital.data.platform.usrtaskmgt.mapper;
 
 import com.epam.digital.data.platform.bpms.api.dto.DdmCompletedTaskDto;
 import com.epam.digital.data.platform.bpms.api.dto.DdmCountResultDto;
+import com.epam.digital.data.platform.bpms.api.dto.DdmLightweightTaskDto;
 import com.epam.digital.data.platform.bpms.api.dto.DdmSignableTaskDto;
 import com.epam.digital.data.platform.bpms.api.dto.DdmTaskDto;
 import com.epam.digital.data.platform.usrtaskmgt.model.response.CompletedTaskResponse;
 import com.epam.digital.data.platform.usrtaskmgt.model.response.CountResponse;
 import com.epam.digital.data.platform.usrtaskmgt.model.response.SignableDataUserTaskResponse;
+import com.epam.digital.data.platform.usrtaskmgt.model.response.UserTaskLightweightResponse;
 import com.epam.digital.data.platform.usrtaskmgt.model.response.UserTaskResponse;
 import java.util.List;
 import org.mapstruct.IterableMapping;
@@ -48,6 +50,8 @@ public interface UserTaskDtoMapper {
 
   @IterableMapping(qualifiedByName = "toUserTaskDto")
   List<UserTaskResponse> toUserTaskDtoList(List<DdmTaskDto> dtos);
+
+  List<UserTaskLightweightResponse> toUserTaskLightweightResponse(List<DdmLightweightTaskDto> dtos);
 
   /**
    * Method for converting {@link SignableDataUserTaskResponse} entity to {@link

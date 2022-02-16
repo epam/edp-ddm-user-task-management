@@ -110,10 +110,10 @@ class UserTaskControllerIT extends BaseIT {
   @Test
   void shouldGetLightweightTasks() {
     mockBpmsRequest(StubRequest.builder()
-        .path("/api/extended/task")
+        .path("/api/extended/task/lightweight")
         .method(HttpMethod.POST)
         .status(200)
-        .responseBody(fileContent("/json/getTasksResponse.json"))
+        .responseBody(fileContent("/json/getLightweightTasksResponse.json"))
         .responseHeaders(Map.of("Content-Type", List.of("application/json")))
         .build());
 
