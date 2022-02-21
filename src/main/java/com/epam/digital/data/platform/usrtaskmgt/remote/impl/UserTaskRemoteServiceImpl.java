@@ -53,7 +53,8 @@ public class UserTaskRemoteServiceImpl implements UserTaskRemoteService {
     log.debug("Getting assigned to current user or unassigned user tasks of process instance {}. "
         + "Paging and sorting params - {}", processInstanceId, page);
 
-    var taskQueryDto = buildDdmTaskQueryDto(processInstanceId, assignee, page);
+    var taskQueryDto = buildDdmTaskQueryDto(assignee, page);
+    taskQueryDto.setProcessInstanceId(processInstanceId);
     var paginationQueryDto = PaginationQueryDto.builder()
         .firstResult(page.getFirstResult())
         .maxResults(page.getMaxResults())
@@ -72,7 +73,8 @@ public class UserTaskRemoteServiceImpl implements UserTaskRemoteService {
     log.debug("Getting assigned to current user or unassigned lightweight user tasks of "
         + "root process instance {}. Paging and sorting params - {}", rootProcessInstanceId, page);
 
-    var taskQueryDto = buildDdmTaskQueryDto(rootProcessInstanceId, assignee, page);
+    var taskQueryDto = buildDdmTaskQueryDto(assignee, page);
+    taskQueryDto.setRootProcessInstanceId(rootProcessInstanceId);
     var paginationQueryDto = PaginationQueryDto.builder()
         .firstResult(page.getFirstResult())
         .maxResults(page.getMaxResults())
@@ -138,8 +140,7 @@ public class UserTaskRemoteServiceImpl implements UserTaskRemoteService {
     return userTaskDtoMapper.toCompletedTaskResponse(result);
   }
 
-  private DdmTaskQueryDto buildDdmTaskQueryDto(String processInstanceId, String assignee,
-      Pageable page) {
+  private DdmTaskQueryDto buildDdmTaskQueryDto(String assignee, Pageable page) {
     var unassignedTaskQuery = DdmTaskQueryDto.builder()
         .unassigned(true)
         .assignee(assignee)
@@ -149,7 +150,6 @@ public class UserTaskRemoteServiceImpl implements UserTaskRemoteService {
         .sortOrder(page.getSortOrder())
         .build();
     return DdmTaskQueryDto.builder()
-        .processInstanceId(processInstanceId)
         .orQueries(List.of(unassignedTaskQuery))
         .sorting(List.of(sortingDto))
         .build();
