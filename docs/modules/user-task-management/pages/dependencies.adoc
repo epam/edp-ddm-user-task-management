@@ -94,46 +94,6 @@ GET /api/task --header 'X-Access-Token: token'
 ]
 ----
 
-
-=== Отримати перелік виконаних задач користувача
-
-Діаграма послідовності отримання переліку виконаних задач користувача:
-
-[plantuml]
-----
-include::partial$get-historic-task-list.puml[]
-----
-
-Запит:
-
-[source]
-----
-GET /api/history/task --header 'X-Access-Token: token'
-----
-
-Відповідь:
-
-* 200 OK
-
-Тіло відповіді:
-
-[source,json]
-----
-[
-    {
-        "id": "string",
-        "name": "string",
-        "assignee": "string",
-        "startTime": "datetime",
-        "endTime": "datetime",
-        "description": "string",
-        "processDefinitionName": "string",
-        "processDefinitionId": "string",
-        "processInstanceId": "string"
-    }
-]
-----
-
 === Взяти задачу у виконання
 
 Діаграма послідовності взяття задачі у виконання:
