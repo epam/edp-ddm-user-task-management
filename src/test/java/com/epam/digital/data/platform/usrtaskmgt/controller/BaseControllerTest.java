@@ -34,10 +34,8 @@ import com.epam.digital.data.platform.usrtaskmgt.model.request.Pageable;
 import com.epam.digital.data.platform.usrtaskmgt.model.response.CompletedTaskResponse;
 import com.epam.digital.data.platform.usrtaskmgt.model.response.CompletedTaskResponse.VariableValueResponse;
 import com.epam.digital.data.platform.usrtaskmgt.model.response.CountResponse;
-import com.epam.digital.data.platform.usrtaskmgt.model.response.HistoryUserTaskResponse;
 import com.epam.digital.data.platform.usrtaskmgt.model.response.SignableDataUserTaskResponse;
 import com.epam.digital.data.platform.usrtaskmgt.model.response.UserTaskResponse;
-import com.epam.digital.data.platform.usrtaskmgt.service.HistoryUserTaskManagementService;
 import com.epam.digital.data.platform.usrtaskmgt.service.UserTaskManagementService;
 import com.google.common.collect.ImmutableMap;
 import io.restassured.module.mockmvc.RestAssuredMockMvc;
@@ -60,13 +58,9 @@ public abstract class BaseControllerTest {
 
   @InjectMocks
   private UserTaskController userTaskController;
-  @InjectMocks
-  private HistoryUserTaskController historyUserTaskController;
 
   @Mock
   private UserTaskManagementService userTaskManagementService;
-  @Mock
-  private HistoryUserTaskManagementService historyUserTaskManagementService;
   @Mock
   private MessageResolver messageResolver;
 
@@ -76,13 +70,11 @@ public abstract class BaseControllerTest {
 
     RestAssuredMockMvc.standaloneSetup(
         userTaskController,
-        historyUserTaskController,
         new CustomMockMvcConfigurer(messageResolver));
     mockCount();
     mockGetById();
     mockGetTasks();
     mockGetTasksByProcessInstanceId();
-    mockGetHistoryTasks();
     mockClaimTaskById();
     mockCompleteTask();
     mockSignOfficerTask();
@@ -154,33 +146,6 @@ public abstract class BaseControllerTest {
     lenient().when(
             userTaskManagementService.getTasks(eq("testProcessInstanceId"), eq(Pageable.builder().build()), any()))
         .thenReturn(List.of(task));
-  }
-
-  void mockGetHistoryTasks() {
-    var task1 = HistoryUserTaskResponse.builder()
-        .id("testId")
-        .name("testTaskName")
-        .assignee("testAssignee")
-        .startTime(LocalDateTime.of(2020, 12, 12, 13, 3, 22))
-        .endTime(LocalDateTime.of(2020, 12, 12, 13, 3, 22))
-        .description("testDesc")
-        .processDefinitionName("testProcessDefinitionName")
-        .processInstanceId("testProcessInstanceId")
-        .processDefinitionId("testProcessDefinitionId")
-        .build();
-    var task2 = HistoryUserTaskResponse.builder()
-        .id("testId2")
-        .name("testTaskName2")
-        .assignee("testAssignee2")
-        .startTime(LocalDateTime.of(2020, 12, 12, 13, 3, 22))
-        .endTime(LocalDateTime.of(2020, 12, 12, 13, 3, 22))
-        .description("testDesc2")
-        .processDefinitionName("testProcessDefinitionName2")
-        .processInstanceId("testProcessInstanceId2")
-        .processDefinitionId("testProcessDefinitionId2")
-        .build();
-    lenient().when(historyUserTaskManagementService.getHistoryTasks(eq(Pageable.builder().build()), any()))
-        .thenReturn(List.of(task1, task2));
   }
 
   void mockClaimTaskById() {
