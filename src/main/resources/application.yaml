@@ -74,3 +74,5 @@ logbook:
   obfuscate:
     headers:
       - x-access-token
+      - x-id-token
+      - x-userinfo
