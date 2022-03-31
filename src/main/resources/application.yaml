@@ -49,6 +49,8 @@ spring:
 springdoc:
   swagger-ui:
     path: "/swagger"
+    csrf:
+      enabled: true
 
 platform:
   logging:
