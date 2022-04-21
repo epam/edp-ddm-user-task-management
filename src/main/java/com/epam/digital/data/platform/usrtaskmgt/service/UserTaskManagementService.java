@@ -42,11 +42,11 @@ import java.util.Optional;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.lang.NonNull;
 import org.springframework.lang.Nullable;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
 
 /**
  * Represents a service that contains methods for working with a user tasks.
@@ -351,12 +351,15 @@ public class UserTaskManagementService {
 
     log.debug("Checking if user task {} assignee {} is empty or not equals to current user {}",
         userTask.getId(), taskAssignee, currentUserName);
-    if (!StringUtils.isEmpty(taskAssignee) && !taskAssignee.equals(currentUserName)) {
+    if (StringUtils.isNotEmpty(taskAssignee) && !taskAssignee.equals(currentUserName)) {
       throw new UserTaskAlreadyAssignedException(userTask.getName(), "Task already assigned");
     }
   }
 
   private void validateFormData(String formId, FormDataDto formDataDto) {
+    if(formDataDto.getData() != null && StringUtils.isNotBlank((String) formDataDto.getData().get("_action_code"))) {
+      return;
+    }
     var formValidationResponseDto = formValidationService.validateForm(formId, formDataDto);
     if (!formValidationResponseDto.isValid()) {
       throw new ValidationException(formValidationResponseDto.getError());
