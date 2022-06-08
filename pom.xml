@@ -11,13 +11,13 @@
   </parent>
 
   <artifactId>user-task-management</artifactId>
-  <version>1.6.0</version>
+  <version>1.7.0</version>
   <name>user-task-management</name>
   <description>User task management service</description>
 
   <properties>
     <bpm.api.version>1.6.0.1</bpm.api.version>
-    <ddm-form-data-storage.version>1.6.0.1</ddm-form-data-storage.version>
+    <ddm-form-data-storage.version>1.7.0.1</ddm-form-data-storage.version>
     <ddm-starter-security.version>1.6.0.1</ddm-starter-security.version>
     <ddm-starter-validation.version>1.6.0.1</ddm-starter-validation.version>
     <ddm-starter-actuator.version>1.6.0.1</ddm-starter-actuator.version>
