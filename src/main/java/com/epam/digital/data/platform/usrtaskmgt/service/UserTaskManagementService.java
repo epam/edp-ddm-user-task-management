@@ -20,8 +20,8 @@ import com.epam.digital.data.platform.bpms.client.exception.TaskNotFoundExceptio
 import com.epam.digital.data.platform.dso.api.dto.Subject;
 import com.epam.digital.data.platform.starter.errorhandling.exception.ValidationException;
 import com.epam.digital.data.platform.starter.validation.service.FormValidationService;
-import com.epam.digital.data.platform.storage.base.exception.RepositoryCommunicationException;
 import com.epam.digital.data.platform.storage.form.dto.FormDataDto;
+import com.epam.digital.data.platform.storage.form.exception.FormDataRepositoryCommunicationException;
 import com.epam.digital.data.platform.storage.form.service.FormDataStorageService;
 import com.epam.digital.data.platform.usrtaskmgt.exception.UserTaskAlreadyAssignedException;
 import com.epam.digital.data.platform.usrtaskmgt.exception.UserTaskAuthorizationException;
@@ -189,7 +189,7 @@ public class UserTaskManagementService {
 
     var taskDefinitionKey = userTaskDto.getTaskDefinitionKey();
     var processInstanceId = userTaskDto.getProcessInstanceId();
-    var data = getFormDataFromCeph(taskDefinitionKey, processInstanceId);
+    var data = getFormData(taskDefinitionKey, processInstanceId);
     log.trace("Form data pre-population is found");
 
     userTaskDto.setData(data.map(FormDataDto::getData).orElse(EMPTY_FORM_DATA));
@@ -366,11 +366,11 @@ public class UserTaskManagementService {
     }
   }
 
-  private Optional<FormDataDto> getFormDataFromCeph(String taskDefinitionKey,
-      String processInstanceId) {
+  private Optional<FormDataDto> getFormData(String taskDefinitionKey,
+                                            String processInstanceId) {
     try {
       return formDataStorageService.getFormData(taskDefinitionKey, processInstanceId);
-    } catch (RepositoryCommunicationException ex) {
+    } catch (FormDataRepositoryCommunicationException ex) {
       log.warn("Couldn't get form data by task definition {} and process instance id {} from ceph",
           taskDefinitionKey, processInstanceId, ex);
       return Optional.empty();
