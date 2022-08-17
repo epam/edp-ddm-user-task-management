@@ -219,9 +219,8 @@ public abstract class BaseIT {
     var formDataBody = String.format("{\"data\":%s}", body);
     mockRequest(formProviderServer, StubRequest.builder()
         .method(HttpMethod.POST)
-        .path("/testFormKey/submission")
+        .path("/api/form-submissions/testFormKey/validate")
         .requestBody(equalTo(formDataBody))
-        .queryParams(Map.of("dryrun", equalTo("1")))
         .status(200)
         .responseBody(formDataBody)
         .responseHeaders(Map.of("Content-Type", List.of("application/json")))
