@@ -2,7 +2,7 @@ bpms:
   url: http://localhost:8080
 dso:
   url: http://localhost:8081
-form-management-provider:
+form-submission-validation:
   url: http://localhost:8082
 
 server:
