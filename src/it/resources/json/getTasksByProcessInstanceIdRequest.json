@@ -1,0 +1,15 @@
+{
+  "processInstanceId": "testProcessInstanceId",
+  "orQueries": [
+    {
+      "unassigned": true,
+      "assignee": "testuser"
+    }
+  ],
+  "sorting": [
+    {
+      "sortBy": null,
+      "sortOrder": null
+    }
+  ]
+}

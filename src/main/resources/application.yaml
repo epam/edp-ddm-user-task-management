@@ -1,0 +1,80 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /user-task-management
+
+# Configuration => prometheus.yml:
+#   scrape_configs:
+#     metrics_path: '/actuator/prometheus'
+management:
+  endpoints:
+    web:
+      exposure:
+        include: 'health'
+  endpoint:
+    health:
+      enabled: true
+      show-details: always
+      group:
+        liveness:
+          include: livenessState
+        readiness:
+          include: readinessState
+  health:
+    livenessstate:
+      enabled: true
+    readinessstate:
+      enabled: true
+    kafka:
+      enabled: false
+    kubernetes:
+      enabled: false
+
+spring:
+  application:
+    name: user-task-management
+  sleuth:
+    opentracing:
+      enabled: true
+    baggage:
+      correlation-enabled: true
+      correlation-fields: x-request-id, X-Primary-Request-URL
+      remote-fields: x-request-id, x-access-token, X-Primary-Request-URL
+  cloud:
+    discovery:
+      client:
+        health-indicator:
+          enabled: false
+
+springdoc:
+  swagger-ui:
+    path: "/swagger"
+    csrf:
+      enabled: true
+
+platform:
+  logging:
+    aspect:
+      enabled: false
+    primary-url:
+      enabled: true
+
+ceph:
+  bucket: ${CEPH_BUCKET_NAME:bucket}
+
+logbook:
+  feign:
+    enabled: true
+  info-logging:
+    enabled: true
+  strategy: without-body
+  exclude:
+    - /user-task-management/v3/api-docs/**
+    - /user-task-management/swagger-ui/**
+    - /user-task-management/actuator/**
+    - /user-task-management/swagger
+  obfuscate:
+    headers:
+      - x-access-token
+      - x-id-token
+      - x-userinfo
