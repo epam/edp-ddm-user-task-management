@@ -540,6 +540,31 @@ class UserTaskControllerIT extends BaseIT {
     performWithTokenOfficerRole(request).andExpect(status().isBadRequest());
   }
 
+  @Test
+  void shouldSaveFormData() throws Exception {
+    mockGetExtendedTask(fileContent("/json/getSignableTaskWithFormVariablesResponse.json"));
+
+    var processInstanceId = "processInstanceId";
+    var token = tokenConfig.getValueWithRoleOfficer();
+    var payload = String.format("{\"data\":{\"data\":\"value\"},\"x-access-token\":\"%s\"}", token);
+
+    var expected = objectMapper.readValue(payload, FormDataDto.class);
+
+    mockGetForm();
+    mockValidationFormData("{\"data\":\"value\"}");
+
+    var request = post("/api/task/" + TASK_ID + "/save")
+        .accept(MediaType.APPLICATION_JSON_VALUE).contentType("application/json")
+        .content(payload);
+
+    performWithTokenOfficerRole(request).andExpect(status().is2xxSuccessful())
+        .andReturn().getResponse().getContentAsString();
+
+    var actual = formDataStorageService.getFormData("taskDefinitionKey",
+        processInstanceId).get();
+    assertThat(actual).isEqualTo(expected);
+  }
+
   private void mockGetExtendedTask(String response) {
     mockBpmsRequest(StubRequest.builder()
         .path(String.format("/api/extended/task/%s", TASK_ID))
