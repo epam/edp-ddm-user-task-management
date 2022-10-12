@@ -263,6 +263,26 @@ public class UserTaskManagementService {
   }
 
   /**
+   * Saving form data without task completing
+   *
+   * @param taskId         task identifier
+   * @param formData       data to save to the storage
+   * @param authentication authentication object of current authenticated user
+   * @see UserTaskManagementService#saveFormDataToStorage(String, FormDataDto, Authentication,
+   * SignatureVerifier) Form data saving method itself
+   */
+  public void saveFormData(@NonNull String taskId,
+      @NonNull FormDataDto formData,
+      @NonNull Authentication authentication) {
+    log.info("Saving form data for task with id {}", taskId);
+
+    saveFormDataToStorage(taskId, formData, authentication,
+        SignatureVerifier.NO_SIGNATURE_VERIFICATION);
+
+    log.info("Form data for task with id {} is saved", taskId);
+  }
+
+  /**
    * Base method that completes user task completion.
    * <p>
    * Performs:
@@ -288,6 +308,15 @@ public class UserTaskManagementService {
       Authentication authentication, SignatureVerifier signatureVerifier) {
     log.debug("Completing user task {}", taskId);
 
+    saveFormDataToStorage(taskId, formData, authentication, signatureVerifier);
+    var result = userTaskRemoteService.completeTaskById(taskId);
+
+    log.debug("User task {} successfully completed", taskId);
+    return result;
+  }
+
+  private void saveFormDataToStorage(String taskId, FormDataDto formData,
+      Authentication authentication, SignatureVerifier signatureVerifier) {
     var taskDto = getUserTaskOrThrowTaskNotExistsException(taskId);
     log.trace("User task {} was found", taskId);
 
@@ -306,11 +335,6 @@ public class UserTaskManagementService {
         taskDto.getProcessInstanceId(),
         formData);
     log.trace("Form data is saved");
-
-    var result = userTaskRemoteService.completeTaskById(taskId);
-
-    log.debug("User task {} successfully completed", taskId);
-    return result;
   }
 
   private void throwExceptionIfUserTaskIsNotAssignedToCurrentUser(
