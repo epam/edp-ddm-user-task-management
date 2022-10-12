@@ -36,7 +36,6 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import java.util.List;
-import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
@@ -185,5 +184,28 @@ public class UserTaskController {
   @ResponseStatus(HttpStatus.NO_CONTENT)
   public void claimTaskById(@PathVariable("id") String taskId, Authentication authentication) {
     userTaskManagementService.claimTaskById(taskId, authentication);
+  }
+
+  @ResponseStatus(HttpStatus.OK)
+  @Operation(summary = "Save form data")
+  @ApiResponse(
+      description = "Form data successfully saved",
+      responseCode = "200")
+  @ApiResponse(
+      description = "Task hasn't found",
+      responseCode = "404",
+      content = @Content(schema = @Schema(implementation = SystemErrorDto.class)))
+  @ApiResponse(
+      description = "Form data validation error",
+      responseCode = "422",
+      content = @Content(schema = @Schema(implementation = ValidationErrorDto.class)))
+  @ApiResponse(
+      description = "Internal server error",
+      responseCode = "500",
+      content = @Content(schema = @Schema(implementation = SystemErrorDto.class)))
+  @PostMapping("/task/{id}/save")
+  public void saveFormData(@PathVariable("id") String taskId, @RequestBody FormDataDto formDataDto,
+      Authentication authentication) {
+    userTaskManagementService.saveFormData(taskId, formDataDto, authentication);
   }
 }
