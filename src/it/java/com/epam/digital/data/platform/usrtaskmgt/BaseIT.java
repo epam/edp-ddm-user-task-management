@@ -17,7 +17,6 @@
 package com.epam.digital.data.platform.usrtaskmgt;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
-import static com.github.tomakehurst.wiremock.client.WireMock.containing;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
@@ -26,6 +25,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.epam.digital.data.platform.starter.security.jwt.TokenParser;
 import com.epam.digital.data.platform.storage.form.service.FormDataKeyProvider;
 import com.epam.digital.data.platform.storage.form.service.FormDataKeyProviderImpl;
+import com.epam.digital.data.platform.storage.form.service.FormDataStorageService;
 import com.epam.digital.data.platform.usrtaskmgt.config.TokenConfig;
 import com.epam.digital.data.platform.usrtaskmgt.model.StubRequest;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -71,13 +71,12 @@ public abstract class BaseIT {
   @Qualifier("dso")
   protected WireMockServer dsoServer;
   @Autowired
-  @Qualifier("ceph")
-  protected WireMockServer cephServer;
-  @Autowired
   @Qualifier("form-provider")
   protected WireMockServer formProviderServer;
   @Autowired
   protected MockMvc mockMvc;
+  @Autowired
+  protected FormDataStorageService formDataStorageService;
 
   @Autowired
   public ObjectMapper objectMapper;
@@ -89,12 +88,11 @@ public abstract class BaseIT {
   @Autowired
   protected TokenConfig tokenConfig;
 
-  protected FormDataKeyProvider cephKeyProvider = new FormDataKeyProviderImpl();
+  protected FormDataKeyProvider formDataKeyProvider = new FormDataKeyProviderImpl();
 
   @AfterEach
   public void tearDown() {
     bpmServer.resetAll();
-    cephServer.resetAll();
   }
 
   protected final void mockBpmsRequest(StubRequest stubRequest) {
@@ -152,46 +150,6 @@ public abstract class BaseIT {
           String.format("Resource %s not found in classpath", filePath));
     }
     return Files.readString(Paths.get(resource.toURI()), StandardCharsets.UTF_8);
-  }
-
-  public void mockGetCephContent(String cephKey, String content) {
-    mockGetBucket();
-
-    var path = "/" + cephBucketName + "/" + cephKey;
-    mockRequest(cephServer, StubRequest.builder()
-        .method(HttpMethod.HEAD)
-        .path(path)
-        .status(200)
-        .responseHeaders(Map.of("Content-Length", List.of(String.valueOf(content.length()))))
-        .build());
-
-    mockRequest(cephServer, StubRequest.builder()
-        .method(HttpMethod.GET)
-        .path(path)
-        .status(200)
-        .responseBody(content)
-        .responseHeaders(Map.of("Content-Length", List.of(String.valueOf(content.length()))))
-        .build());
-  }
-
-  public void mockPutCephContent(String cephKey, String body) {
-    mockGetBucket();
-    mockRequest(cephServer, StubRequest.builder()
-        .method(HttpMethod.PUT)
-        .path("/" + cephBucketName + "/" + cephKey)
-        .requestBody(containing(body))
-        .status(200)
-        .build());
-  }
-
-  private void mockGetBucket() {
-    mockRequest(cephServer, StubRequest.builder()
-        .path("/")
-        .method(HttpMethod.GET)
-        .status(200)
-        .responseBody(
-            fileContent("/xml/cephBucketsResponse.xml").replaceAll(">\\s*\\r*\\n*\\s*<", "><"))
-        .build());
   }
 
   protected void mockOfficerDigitalSignature(int status, String responseBody) {

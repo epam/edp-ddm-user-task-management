@@ -34,13 +34,6 @@ public class WireMockConfig {
     return WireMockUtil.createAndStartMockServerForUrl(urlStr);
   }
 
-  @Qualifier("ceph")
-  @Bean(destroyMethod = "stop")
-  public WireMockServer cephWireMock(@Value("${ceph.http-endpoint}") String urlStr)
-      throws MalformedURLException {
-    return WireMockUtil.createAndStartMockServerForUrl(urlStr);
-  }
-
   @Qualifier("dso")
   @Bean(destroyMethod = "stop")
   public WireMockServer restDsoClientWireMock(@Value("${dso.url}") String urlStr)
