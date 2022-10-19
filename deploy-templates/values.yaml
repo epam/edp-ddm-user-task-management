@@ -13,6 +13,7 @@ appConfigMountPath: "/app/config"
 cephSecretMountPath: "/app/secrets/ceph"
 readinessPath: "/user-task-management/actuator/health/readiness"
 livenessPath: "/user-task-management/actuator/health/liveness"
+redisSecretsMountPath: "/app/secrets/redis"
 
 prometheus:
   endpoints:
@@ -25,6 +26,19 @@ ingress: # expose the service with a route or an ingress depending on platform t
 ceph:
   bucketName: lowcode-form-data-storage
   host: ${CEPH_BUCKET_HOST}
+
+storage:
+  form-data:
+    type: redis
+  backend:
+    redis:
+      password: ${REDIS_PASSWORD}
+      sentinel:
+        master: mymaster
+        nodes: ${redis.endpoint}
+
+redis:
+  secretName: redis-auth
 
 s3:
   config:
