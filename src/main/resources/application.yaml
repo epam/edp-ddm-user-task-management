@@ -59,8 +59,12 @@ platform:
     primary-url:
       enabled: true
 
-ceph:
-  bucket: ${CEPH_BUCKET_NAME:bucket}
+storage:
+  form-data:
+    type: ceph
+  backend:
+    ceph:
+      bucket: ${CEPH_BUCKET_NAME:bucket}
 
 logbook:
   feign:

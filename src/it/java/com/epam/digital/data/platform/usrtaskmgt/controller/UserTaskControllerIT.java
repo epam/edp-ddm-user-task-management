@@ -26,6 +26,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.epam.digital.data.platform.bpms.api.dto.DdmTaskDto;
 import com.epam.digital.data.platform.starter.errorhandling.dto.SystemErrorDto;
 import com.epam.digital.data.platform.starter.errorhandling.dto.ValidationErrorDto;
+import com.epam.digital.data.platform.storage.form.dto.FormDataDto;
 import com.epam.digital.data.platform.usrtaskmgt.BaseIT;
 import com.epam.digital.data.platform.usrtaskmgt.model.StubRequest;
 import com.epam.digital.data.platform.usrtaskmgt.model.response.CompletedTaskResponse;
@@ -131,7 +132,7 @@ class UserTaskControllerIT extends BaseIT {
   }
 
   @Test
-  void shouldGetTaskById_noCephConnection() {
+  void shouldGetTaskById_noStorageConnection() {
     mockGetExtendedTask(fileContent("/json/getSignableTaskWithFormVariablesResponse.json"));
 
     var request = get("/api/task/" + TASK_ID)
@@ -160,8 +161,11 @@ class UserTaskControllerIT extends BaseIT {
 
     var taskDefinitionKey = "taskDefinitionKey";
     var processInstanceId = "processInstanceId";
-    var cephKey = cephKeyProvider.generateKey(taskDefinitionKey, processInstanceId);
-    mockGetCephContent(cephKey, "{\"data\" : {\"field1\": \"fieldValue1\"}}");
+    var storageKey = formDataKeyProvider.generateKey(taskDefinitionKey, processInstanceId);
+    LinkedHashMap<String, Object> data = new LinkedHashMap<>();
+    data.put("filed1", "fieldValue1");
+    var formData = FormDataDto.builder().data(data).build();
+    formDataStorageService.putFormData(storageKey, formData);
 
     var request = get("/api/task/" + TASK_ID)
         .accept(MediaType.APPLICATION_JSON_VALUE);
@@ -169,7 +173,7 @@ class UserTaskControllerIT extends BaseIT {
 
     assertThat(taskById).isNotNull()
         .hasFieldOrPropertyWithValue("id", TASK_ID)
-        .hasFieldOrPropertyWithValue("data", Map.of("field1", "fieldValue1"))
+        .hasFieldOrPropertyWithValue("data", data)
         .hasFieldOrPropertyWithValue("eSign", true)
         .hasFieldOrPropertyWithValue("processDefinitionId", "pdId1")
         .hasFieldOrPropertyWithValue("processDefinitionName", "testPDName")
@@ -181,6 +185,8 @@ class UserTaskControllerIT extends BaseIT {
         .hasFieldOrPropertyWithValue("assignee", "testuser")
         .hasFieldOrPropertyWithValue("signatureValidationPack", Set.of())
         .hasFieldOrPropertyWithValue("formVariables", Map.of("fullName", "Test Full Name"));
+
+      formDataStorageService.deleteByProcessInstanceId(processInstanceId);
   }
 
   @Test
@@ -217,11 +223,8 @@ class UserTaskControllerIT extends BaseIT {
     mockGetExtendedTask(fileContent("/json/getSignableTaskWithFormVariablesResponse.json"));
 
     var processInstanceId = "processInstanceId";
-    var taskDefinitionKey = "taskDefinitionKey";
-    var cephKey = cephKeyProvider.generateKey(taskDefinitionKey, processInstanceId);
     var token = tokenConfig.getValueWithRoleOfficer();
     var payload = String.format("{\"data\":{},\"x-access-token\":\"%s\"}", token);
-    mockPutCephContent(cephKey, payload);
 
     mockGetForm();
     mockValidationFormData("{}");
@@ -255,11 +258,8 @@ class UserTaskControllerIT extends BaseIT {
     mockGetExtendedTask(fileContent("/json/getSignableTaskWithFormVariablesResponse.json"));
 
     var processInstanceId = "processInstanceId";
-    var taskDefinitionKey = "taskDefinitionKey";
-    var cephKey = cephKeyProvider.generateKey(taskDefinitionKey, processInstanceId);
     var token = tokenConfig.getValueWithRoleOfficer();
     var payload = String.format("{\"data\":{},\"x-access-token\":\"%s\"}", token);
-    mockPutCephContent(cephKey, payload);
 
     mockGetForm();
     mockValidationFormData("{}");
@@ -294,12 +294,8 @@ class UserTaskControllerIT extends BaseIT {
   void shouldFailOnSignOfficerForm() {
     mockGetExtendedTask(fileContent("/json/getSignableTaskWithFormVariablesResponse.json"));
 
-    var processInstanceId = "processInstanceId";
-    var taskDefinitionKey = "taskDefinitionKey";
-    var cephKey = cephKeyProvider.generateKey(taskDefinitionKey, processInstanceId);
     var token = tokenConfig.getValueWithRoleOfficer();
     var payload = String.format("{\"data\":{},\"x-access-token\":\"%s\"}", token);
-    mockPutCephContent(cephKey, payload);
 
     mockGetForm();
     mockValidationFormData("{}");
@@ -321,11 +317,8 @@ class UserTaskControllerIT extends BaseIT {
     mockGetExtendedTask(fileContent("/json/getSignableTaskWithValidationPack.json"));
 
     var processInstanceId = "processInstanceId";
-    var taskDefinitionKey = "taskDefinitionKey";
-    var cephKey = cephKeyProvider.generateKey(taskDefinitionKey, processInstanceId);
     var token = tokenConfig.getValueWithRoleCitizen();
     var payload = String.format("{\"data\":{},\"x-access-token\":\"%s\"}", token);
-    mockPutCephContent(cephKey, payload);
 
     mockGetForm();
     mockValidationFormData("{}");
@@ -363,11 +356,8 @@ class UserTaskControllerIT extends BaseIT {
     mockGetExtendedTask(fileContent("/json/getSignableTaskWithFormVariablesResponse.json"));
 
     var processInstanceId = "processInstanceId";
-    var taskDefinitionKey = "taskDefinitionKey";
-    var cephKey = cephKeyProvider.generateKey(taskDefinitionKey, processInstanceId);
     var token = tokenConfig.getValueWithRoleCitizen();
     var payload = String.format("{\"data\":{},\"x-access-token\":\"%s\"}", token);
-    mockPutCephContent(cephKey, payload);
 
     mockGetForm();
     mockValidationFormData("{}");
@@ -404,12 +394,8 @@ class UserTaskControllerIT extends BaseIT {
   void shouldFailOnSignCitizenForm() {
     mockGetExtendedTask(fileContent("/json/getSignableTaskWithFormVariablesResponse.json"));
 
-    var processInstanceId = "processInstanceId";
-    var taskDefinitionKey = "taskDefinitionKey";
-    var cephKey = cephKeyProvider.generateKey(taskDefinitionKey, processInstanceId);
     var token = tokenConfig.getValueWithRoleCitizen();
     var payload = String.format("{\"data\":{},\"x-access-token\":\"%s\"}", token);
-    mockPutCephContent(cephKey, payload);
 
     mockGetForm();
     mockValidationFormData("{}");
@@ -453,14 +439,6 @@ class UserTaskControllerIT extends BaseIT {
   @Test
   void shouldReturn422DuringTaskCompletion() {
     mockGetExtendedTask(fileContent("/json/getSignableTaskWithFormVariablesResponse.json"));
-
-    var processInstanceId = "processInstanceId";
-    var taskDefinitionKey = "taskDefinitionKey";
-    var cephKey = cephKeyProvider.generateKey(taskDefinitionKey, processInstanceId);
-    var token = tokenConfig.getValueWithRoleOfficer();
-    var payload = String.format("{\"data\":{},\"x-access-token\":\"%s\"}", token);
-    mockPutCephContent(cephKey, payload);
-
     mockGetForm();
     mockValidationFormData("{}");
 
