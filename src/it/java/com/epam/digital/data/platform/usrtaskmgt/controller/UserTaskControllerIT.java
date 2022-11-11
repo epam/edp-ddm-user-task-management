@@ -227,7 +227,7 @@ class UserTaskControllerIT extends BaseIT {
     var payload = String.format("{\"data\":{},\"x-access-token\":\"%s\"}", token);
 
     mockGetForm();
-    mockValidationFormData("{}");
+    mockValidationValidFormData("{}", processInstanceId);
 
     mockCompleteTask(200, "{\"id\":\"" + TASK_ID + "\","
         + "\"processInstanceId\":\"" + processInstanceId + "\","
@@ -262,7 +262,7 @@ class UserTaskControllerIT extends BaseIT {
     var payload = String.format("{\"data\":{},\"x-access-token\":\"%s\"}", token);
 
     mockGetForm();
-    mockValidationFormData("{}");
+    mockValidationValidFormData("{}", processInstanceId);
 
     mockOfficerDigitalSignature(200, "{\"valid\":true}");
 
@@ -298,7 +298,7 @@ class UserTaskControllerIT extends BaseIT {
     var payload = String.format("{\"data\":{},\"x-access-token\":\"%s\"}", token);
 
     mockGetForm();
-    mockValidationFormData("{}");
+    mockValidationValidFormData("{}", null);
 
     mockOfficerDigitalSignature(200,
         "{\"valid\":false,\"error\":{\"localizedMessage\":\"message\"}}");
@@ -321,7 +321,7 @@ class UserTaskControllerIT extends BaseIT {
     var payload = String.format("{\"data\":{},\"x-access-token\":\"%s\"}", token);
 
     mockGetForm();
-    mockValidationFormData("{}");
+    mockValidationValidFormData("{}", processInstanceId);
 
     var requestBody = matchingJsonPath("$.allowedSubjects",
         equalToJson("[\"ENTREPRENEUR\"]"));
@@ -360,7 +360,7 @@ class UserTaskControllerIT extends BaseIT {
     var payload = String.format("{\"data\":{},\"x-access-token\":\"%s\"}", token);
 
     mockGetForm();
-    mockValidationFormData("{}");
+    mockValidationValidFormData("{}", processInstanceId);
 
     var requestBody = matchingJsonPath("$.allowedSubjects",
         equalToJson("[\"INDIVIDUAL\"]"));
@@ -398,7 +398,7 @@ class UserTaskControllerIT extends BaseIT {
     var payload = String.format("{\"data\":{},\"x-access-token\":\"%s\"}", token);
 
     mockGetForm();
-    mockValidationFormData("{}");
+    mockValidationValidFormData("{}", null);
 
     var requestBody = matchingJsonPath("$.allowedSubjects",
         equalToJson("[\"INDIVIDUAL\"]"));
@@ -440,7 +440,7 @@ class UserTaskControllerIT extends BaseIT {
   void shouldReturn422DuringTaskCompletion() {
     mockGetExtendedTask(fileContent("/json/getSignableTaskWithFormVariablesResponse.json"));
     mockGetForm();
-    mockValidationFormData("{}");
+    mockValidationValidFormData("{}", "processInstanceId");
 
     mockCompleteTask(422,
         "{\"details\":{\"errors\":[{\"message\":\"myMsg\",\"field\":\"variable\",\"value\":\"value\"}]}}");
@@ -451,6 +451,32 @@ class UserTaskControllerIT extends BaseIT {
 
     var result = performForObjectAsOfficerWithStatus(request, ValidationErrorDto.class,
         status().is(422));
+
+    assertThat(result).isNotNull();
+    var validationErrorDto = result.getDetails().getErrors().get(0);
+    assertThat(validationErrorDto.getMessage()).isEqualTo("myMsg");
+    assertThat(validationErrorDto.getField()).isEqualTo("variable");
+    assertThat(validationErrorDto.getValue()).isEqualTo("value");
+  }
+
+  @Test
+  void shouldReturn422OnInvalidFormValidation() {
+    mockGetExtendedTask(fileContent("/json/getSignableTaskWithFormVariablesResponse.json"));
+    mockGetForm();
+    mockValidationFormData(
+        "{}",
+        "processInstanceId",
+        "{\"details\":{\"errors\":[{\"message\":\"myMsg\",\"field\":\"variable\",\"value\":\"value\"}]}}",
+        422);
+
+    var request =
+        post("/api/task/" + TASK_ID + "/complete")
+            .accept(MediaType.APPLICATION_JSON_VALUE)
+            .contentType("application/json")
+            .content("{\"data\" : {}}");
+
+    var result =
+        performForObjectAsOfficerWithStatus(request, ValidationErrorDto.class, status().is(422));
 
     assertThat(result).isNotNull();
     var validationErrorDto = result.getDetails().getErrors().get(0);
@@ -551,7 +577,7 @@ class UserTaskControllerIT extends BaseIT {
     var expected = objectMapper.readValue(payload, FormDataDto.class);
 
     mockGetForm();
-    mockValidationFormData("{\"data\":\"value\"}");
+    mockValidationValidFormData("{\"data\":\"value\"}", processInstanceId);
 
     var request = post("/api/task/" + TASK_ID + "/save")
         .accept(MediaType.APPLICATION_JSON_VALUE).contentType("application/json")
