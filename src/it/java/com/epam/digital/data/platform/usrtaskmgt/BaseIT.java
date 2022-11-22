@@ -173,19 +173,14 @@ public abstract class BaseIT {
         .build());
   }
 
-  protected void mockValidationValidFormData(String data, String processInstanceId) {
-    mockValidationFormData(data, processInstanceId, "{}", 200);
-  }
-
-  protected void mockValidationFormData(String data, String processInstanceId, String responseBody, int status) {
-    var formDataBody =
-        String.format("{\"data\":%s,\"processInstanceId\":\"%s\"}", data, processInstanceId);
+  protected void mockValidationFormData(String body) {
+    var formDataBody = String.format("{\"data\":%s}", body);
     mockRequest(formProviderServer, StubRequest.builder()
         .method(HttpMethod.POST)
         .path("/api/form-submissions/testFormKey/validate")
         .requestBody(equalTo(formDataBody))
-        .status(status)
-        .responseBody(responseBody)
+        .status(200)
+        .responseBody(formDataBody)
         .responseHeaders(Map.of("Content-Type", List.of("application/json")))
         .build());
   }
