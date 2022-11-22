@@ -18,7 +18,6 @@ package com.epam.digital.data.platform.usrtaskmgt.service;
 
 import com.epam.digital.data.platform.bpms.client.exception.TaskNotFoundException;
 import com.epam.digital.data.platform.dso.api.dto.Subject;
-import com.epam.digital.data.platform.integration.formprovider.dto.FormDataValidationDto;
 import com.epam.digital.data.platform.starter.errorhandling.exception.ValidationException;
 import com.epam.digital.data.platform.starter.validation.service.FormValidationService;
 import com.epam.digital.data.platform.storage.form.dto.FormDataDto;
@@ -325,7 +324,7 @@ public class UserTaskManagementService {
     throwExceptionIfUserTaskIsNotAssignedToCurrentUser(taskDto, currentUserName);
     log.trace("Verified that user task {} is assigned to {}", taskDto.getId(), currentUserName);
 
-    validateFormData(taskDto, formData);
+    validateFormData(taskDto.getFormKey(), formData);
     log.trace("Form data has passed the validation");
 
     signatureVerifier.verify(taskDto.getSignatureValidationPack(), formData);
@@ -381,19 +380,13 @@ public class UserTaskManagementService {
     }
   }
 
-  private void validateFormData(SignableDataUserTaskResponse taskDto, FormDataDto formDataDto) {
+  private void validateFormData(String formId, FormDataDto formDataDto) {
     if(formDataDto.getData() != null && StringUtils.isNotBlank((String) formDataDto.getData().get("_action_code"))) {
       return;
     }
-    var formValidationDto =
-        FormDataValidationDto.builder()
-            .data(formDataDto.getData())
-            .processInstanceId(taskDto.getProcessInstanceId())
-            .build();
-    var validationResult =
-        formValidationService.validateForm(taskDto.getFormKey(), formValidationDto);
-    if (!validationResult.isValid()) {
-      throw new ValidationException(validationResult.getError());
+    var formValidationResponseDto = formValidationService.validateForm(formId, formDataDto);
+    if (!formValidationResponseDto.isValid()) {
+      throw new ValidationException(formValidationResponseDto.getError());
     }
   }
 
