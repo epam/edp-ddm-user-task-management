@@ -17,7 +17,7 @@
 
   <properties>
     <bpm.api.version>1.6.0.1</bpm.api.version>
-    <ddm-form-data-storage.version>1.8.0.2</ddm-form-data-storage.version>
+    <ddm-form-data-storage.version>1.8.0.1</ddm-form-data-storage.version>
     <ddm-starter-security.version>1.6.0.6</ddm-starter-security.version>
     <ddm-starter-validation.version>1.6.0.10</ddm-starter-validation.version>
     <ddm-starter-actuator.version>1.6.0.1</ddm-starter-actuator.version>
