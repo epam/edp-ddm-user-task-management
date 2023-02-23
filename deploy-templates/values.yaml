@@ -22,7 +22,6 @@ service:
   port: 8080
 replicas: 1
 appConfigMountPath: "/app/config"
-cephSecretMountPath: "/app/secrets/ceph"
 readinessPath: "/user-task-management/actuator/health/readiness"
 livenessPath: "/user-task-management/actuator/health/liveness"
 redisSecretsMountPath: "/app/secrets/redis"
@@ -34,10 +33,6 @@ prometheus:
 
 ingress: # expose the service with a route or an ingress depending on platform type
   platform: openshift # openshift or kubernetes
-
-ceph:
-  bucketName: lowcode-form-data-storage
-  host: ${CEPH_BUCKET_HOST}
 
 storage:
   form-data:
@@ -52,12 +47,6 @@ storage:
 redis:
   secretName: redis-auth
 
-s3:
-  config:
-    client:
-      protocol: http
-    options:
-      pathStyleAccess: true
 
 monitoring:
   namespace: openshift-monitoring
