@@ -6,7 +6,7 @@
   <parent>
     <groupId>com.epam.digital.data.platform</groupId>
     <artifactId>low-code-platform-parent</artifactId>
-    <version>1.6.0.4</version>
+    <version>1.6.0.7</version>
     <relativePath/>
   </parent>
 
@@ -27,7 +27,6 @@
     <ddm-starter-error-handler.version>1.6.0.1</ddm-starter-error-handler.version>
     <log4j.version>2.17.0</log4j.version>
     <embedded-redis.version>0.7.1</embedded-redis.version>
-    <spring-security-core.version>5.7.5</spring-security-core.version>
 
     <!-- This property is set by jacoco and used in the surefire config
 			Set it to empty to avoid JVM startup error related to "@{argLine}" when run without jacoco -->
@@ -53,11 +52,6 @@
         <groupId>org.apache.logging.log4j</groupId>
         <artifactId>log4j-core</artifactId>
         <version>${log4j.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.springframework.security</groupId>
-        <artifactId>spring-security-core</artifactId>
-        <version>${spring-security-core.version}</version>
       </dependency>
 	  </dependencies>
   </dependencyManagement>
