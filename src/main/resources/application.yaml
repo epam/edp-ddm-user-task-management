@@ -45,6 +45,9 @@ spring:
       client:
         health-indicator:
           enabled: false
+  jackson:
+    deserialization:
+      USE_BIG_DECIMAL_FOR_FLOATS: true
 
 springdoc:
   swagger-ui:
