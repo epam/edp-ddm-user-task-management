@@ -146,6 +146,7 @@ class UserTaskControllerIT extends BaseIT {
         .hasFieldOrPropertyWithValue("processDefinitionId", "pdId1")
         .hasFieldOrPropertyWithValue("processDefinitionName", "testPDName")
         .hasFieldOrPropertyWithValue("processInstanceId", "processInstanceId")
+        .hasFieldOrPropertyWithValue("rootProcessInstanceId", "rootProcessInstanceId")
         .hasFieldOrPropertyWithValue("taskDefinitionKey", "taskDefinitionKey")
         .hasFieldOrPropertyWithValue("created",
             LocalDateTime.of(2021, 2, 10, 13, 55, 10, 123000000))
