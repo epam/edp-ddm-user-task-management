@@ -16,7 +16,7 @@
   <description>User task management service</description>
 
   <properties>
-    <bpm.api.version>1.6.0.1</bpm.api.version>
+    <bpm.api.version>1.9.6.4</bpm.api.version>
     <ddm-form-data-storage.version>1.8.0.1</ddm-form-data-storage.version>
     <ddm-starter-security.version>1.6.0.13</ddm-starter-security.version>
     <ddm-starter-validation.version>1.6.0.14</ddm-starter-validation.version>
