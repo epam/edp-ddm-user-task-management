@@ -42,6 +42,7 @@ public class SignableDataUserTaskResponse {
   private LocalDateTime created;
   private String description;
   private String processInstanceId;
+  private String rootProcessInstanceId;
   private String processDefinitionId;
   private String processDefinitionName;
   private String formKey;

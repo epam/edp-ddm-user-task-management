@@ -39,6 +39,7 @@ Contract.make {
                 created: "2020-12-12T13:03:22.000Z",
                 description: "testDesc",
                 processInstanceId: "testProcessInstanceId",
+                rootProcessInstanceId: "testRootProcessInstanceId",
                 processDefinitionId: "testProcessDefinitionId",
                 formKey: "testFormKey",
                 suspended: true,

@@ -3,6 +3,7 @@
   "processDefinitionId": "pdId1",
   "processDefinitionName": "testPDName",
   "processInstanceId": "processInstanceId",
+  "rootProcessInstanceId": "rootProcessInstanceId",
   "taskDefinitionKey": "taskDefinitionKey",
   "created": "2021-02-10T13:55:10.123Z",
   "formKey": "testFormKey",

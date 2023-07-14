@@ -88,7 +88,7 @@ public abstract class BaseControllerTest {
   void mockGetById() {
     var taskById = new SignableDataUserTaskResponse("testId", "taskDefinitionKey", "testTaskName",
         "testAssignee", LocalDateTime.of(LocalDate.of(2020, 12, 12), LocalTime.of(13, 3, 22)),
-        "testDesc", "testProcessInstanceId", "testProcessDefinitionId", "testProcess",
+        "testDesc", "testProcessInstanceId","testRootProcessInstanceId", "testProcessDefinitionId", "testProcess",
         "testFormKey", true, true,
         ImmutableMap.of("fullName", "FullName"), Set.of(), ImmutableMap.of("var1", 123123));
 
