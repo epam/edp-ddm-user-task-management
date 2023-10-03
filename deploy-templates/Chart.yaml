@@ -1,6 +1,11 @@
 apiVersion: v2
-description: Chart for deployng user-task-management
+description: Chart for deploying user-task-management
 maintainers:
-- email: dmytro_zinchenko1@epam.com
+  - name: OSD-DDM
 name: user-task-management
-version: 0.0.1
+version: 1.9.7
+appVersion: 1.9.7
+sources:
+  - https://github.com
+home: EPAM
+type: application

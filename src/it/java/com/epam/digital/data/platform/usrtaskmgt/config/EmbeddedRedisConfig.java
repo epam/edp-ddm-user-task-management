@@ -16,10 +16,11 @@
 
 package com.epam.digital.data.platform.usrtaskmgt.config;
 
-import com.google.common.net.HostAndPort;
 import java.util.List;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
+
+import com.google.common.net.HostAndPort;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
@@ -39,13 +40,14 @@ public class EmbeddedRedisConfig {
   @PostConstruct
   public void postConstruct() {
     var hostAndPort = HostAndPort.fromString(nodes);
-    redisCluster = RedisCluster.builder()
-        .sentinelPorts(List.of(hostAndPort.getPort()))
-        .sentinelCount(1)
-        .quorumSize(1)
-        .ephemeralServers()
-        .replicationGroup(master, 1)
-        .build();
+    redisCluster =
+            RedisCluster.builder()
+                    .sentinelPorts(List.of(hostAndPort.getPort()))
+                    .sentinelCount(1)
+                    .quorumSize(1)
+                    .ephemeralServers()
+                    .replicationGroup(master, 1)
+                    .build();
 
     redisCluster.start();
   }

@@ -1,3 +1,13 @@
+platform:
+  security:
+    whitelist:
+      - /v3/api-docs.yaml
+
+spring:
+  zipkin:
+    enabled: false
+locale:
+  language: "uk"
 bpms:
   url: http://localhost:8090
 dso:

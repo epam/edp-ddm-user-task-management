@@ -76,7 +76,7 @@ public class UserTaskManagementService {
 
   private final UserTaskRemoteService userTaskRemoteService;
   private final DigitalSignatureRemoteService digitalSignatureRemoteService;
-  private final FormDataStorageService formDataStorageService;
+  private final FormDataStorageService<?> formDataStorageService;
   private final FormValidationService formValidationService;
 
   /**

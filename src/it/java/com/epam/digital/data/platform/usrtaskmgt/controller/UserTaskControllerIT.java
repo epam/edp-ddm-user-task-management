@@ -27,6 +27,7 @@ import com.epam.digital.data.platform.bpms.api.dto.DdmTaskDto;
 import com.epam.digital.data.platform.starter.errorhandling.dto.SystemErrorDto;
 import com.epam.digital.data.platform.starter.errorhandling.dto.ValidationErrorDto;
 import com.epam.digital.data.platform.storage.form.dto.FormDataDto;
+import com.epam.digital.data.platform.storage.form.dto.FormDataInputWrapperDto;
 import com.epam.digital.data.platform.usrtaskmgt.BaseIT;
 import com.epam.digital.data.platform.usrtaskmgt.model.StubRequest;
 import com.epam.digital.data.platform.usrtaskmgt.model.response.CompletedTaskResponse;
@@ -166,7 +167,12 @@ class UserTaskControllerIT extends BaseIT {
     LinkedHashMap<String, Object> data = new LinkedHashMap<>();
     data.put("filed1", "fieldValue1");
     var formData = FormDataDto.builder().data(data).build();
-    formDataStorageService.putFormData(storageKey, formData);
+    var formDataInputWrapper = FormDataInputWrapperDto.builder()
+            .key(storageKey)
+            .formData(formData)
+            .processInstanceId(processInstanceId)
+            .build();
+    formDataStorageService.putFormData(formDataInputWrapper);
 
     var request = get("/api/task/" + TASK_ID)
         .accept(MediaType.APPLICATION_JSON_VALUE);
@@ -187,7 +193,7 @@ class UserTaskControllerIT extends BaseIT {
         .hasFieldOrPropertyWithValue("signatureValidationPack", Set.of())
         .hasFieldOrPropertyWithValue("formVariables", Map.of("fullName", "Test Full Name"));
 
-      formDataStorageService.deleteByProcessInstanceId(processInstanceId);
+      formDataStorageService.deleteByProcessInstance(processInstanceId);
   }
 
   @Test

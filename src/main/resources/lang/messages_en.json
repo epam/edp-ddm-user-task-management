@@ -1,0 +1,6 @@
+{
+  "user-task.not-exists": "Task with id {0} does not exist",
+  "user-task.not-exists-or-completed": "Task does not exist or has already been completed",
+  "user-task.already-assigned": "Task {0} was accepted for execution by another employee.",
+  "user-task.authorization-error": "No access to task with id {0}"
+}

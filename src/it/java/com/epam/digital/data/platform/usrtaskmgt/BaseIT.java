@@ -61,7 +61,8 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 @AutoConfigureMockMvc
 @ActiveProfiles({"test", "local"})
 @ExtendWith(SpringExtension.class)
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+    classes = UserTaskManagementApplication.class)
 public abstract class BaseIT {
 
   @Autowired
@@ -76,7 +77,7 @@ public abstract class BaseIT {
   @Autowired
   protected MockMvc mockMvc;
   @Autowired
-  protected FormDataStorageService formDataStorageService;
+  protected FormDataStorageService<?> formDataStorageService;
 
   @Autowired
   public ObjectMapper objectMapper;

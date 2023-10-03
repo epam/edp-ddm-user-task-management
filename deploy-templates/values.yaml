@@ -1,7 +1,19 @@
 global:
+  container:
+    requestsLimitsEnabled: true
+  istio:
+    sidecar:
+      requestsLimitsEnabled: true
+      resources:
+        requests: {}
+        limits: {}
   registry:
     userTaskManagement:
-      replicas: 1
+      container:
+        envVars: {}
+        resources:
+          requests: {}
+          limits: {}
       hpa:
         enabled: false
         minReplicas: 1
@@ -12,11 +24,7 @@ global:
           resources:
             requests: {}
             limits: {}
-      container:
-        resources:
-          requests: {}
-          limits: {}
-        envVars: {}
+      replicas: 1
 
 podAnnotations: {}
 image:
@@ -36,8 +44,10 @@ prometheus:
     - scrapePath: "/user-task-management/actuator/prometheus"
       port: "{{ .Values.service.port }}"
 
-ingress: # expose the service with a route or an ingress depending on platform type
-  platform: openshift # openshift or kubernetes
+# expose the service with a route or an ingress depending on platform type
+ingress:
+  # openshift or kubernetes
+  platform: openshift
 
 storage:
   form-data:
@@ -62,5 +72,9 @@ keycloak:
     citizen: citizen-portal
     admin: admin
   certificatesEndpoint: /protocol/openid-connect/certs
-
 deployProfile: prod
+
+platform:
+  security:
+    csrf:
+      enabled: false

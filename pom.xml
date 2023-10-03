@@ -17,11 +17,11 @@
 
   <properties>
     <bpm.api.version>1.9.6.4</bpm.api.version>
-    <ddm-form-data-storage.version>1.8.0.1</ddm-form-data-storage.version>
+    <ddm-form-data-storage.version>1.9.8.1</ddm-form-data-storage.version>
     <ddm-starter-security.version>1.6.0.13</ddm-starter-security.version>
     <ddm-starter-validation.version>1.6.0.14</ddm-starter-validation.version>
     <ddm-starter-actuator.version>1.6.0.1</ddm-starter-actuator.version>
-    <ddm-starter-localization.version>1.6.0.1</ddm-starter-localization.version>
+    <ddm-starter-localization.version>1.6.0.11</ddm-starter-localization.version>
     <digital-signature-ops-client.version>1.9.0.4</digital-signature-ops-client.version>
     <ddm-starter-logger.version>1.6.0.1</ddm-starter-logger.version>
     <ddm-starter-error-handler.version>1.6.0.1</ddm-starter-error-handler.version>
@@ -207,6 +207,27 @@
       <plugin>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-maven-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>pre-integration-test</id>
+            <goals>
+              <goal>start</goal>
+            </goals>
+            <configuration>
+<!--          <fork>false</fork> Fixes Windows issue: The filename or extension is too long-->
+              <useTestClasspath>true</useTestClasspath>
+              <directories>${project.build.testOutputDirectory}</directories>
+              <mainClass>com.epam.digital.data.platform.usrtaskmgt.TestApp</mainClass>
+              <jvmArguments>-Dspring.profiles.active=test -Dserver.port=7070</jvmArguments>
+            </configuration>
+          </execution>
+          <execution>
+            <id>post-integration-test</id>
+            <goals>
+              <goal>stop</goal>
+            </goals>
+          </execution>
+        </executions>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -261,6 +282,24 @@
             <goals>
               <goal>makeAggregateBom</goal>
             </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.springdoc</groupId>
+        <artifactId>springdoc-openapi-maven-plugin</artifactId>
+        <version>1.4</version>
+        <executions>
+          <execution>
+            <phase>integration-test</phase>
+            <goals>
+              <goal>generate</goal>
+            </goals>
+            <configuration>
+              <apiDocsUrl>http://localhost:7070/user-task-management/v3/api-docs.yaml</apiDocsUrl>
+              <outputFileName>swagger.yml</outputFileName>
+              <outputDir>openapi</outputDir>
+            </configuration>
           </execution>
         </executions>
       </plugin>

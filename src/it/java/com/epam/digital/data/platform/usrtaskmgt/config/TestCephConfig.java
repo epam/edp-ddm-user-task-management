@@ -17,8 +17,10 @@
 package com.epam.digital.data.platform.usrtaskmgt.config;
 
 import com.epam.digital.data.platform.integration.ceph.service.CephService;
+import com.epam.digital.data.platform.storage.form.model.CephKeysSearchParams;
 import com.epam.digital.data.platform.storage.form.repository.CephFormDataRepository;
 import com.epam.digital.data.platform.storage.form.repository.FormDataRepository;
+import com.epam.digital.data.platform.storage.form.service.CephFormDataStorageService;
 import com.epam.digital.data.platform.storage.form.service.FormDataKeyProviderImpl;
 import com.epam.digital.data.platform.storage.form.service.FormDataStorageService;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -44,7 +46,7 @@ public class TestCephConfig {
   }
 
   @Bean
-  public FormDataRepository formDataRepository(CephService cephService) {
+  public FormDataRepository<?> formDataRepository(CephService cephService) {
     return CephFormDataRepository.builder()
         .cephBucketName(cephBucketName)
         .objectMapper(objectMapper)
@@ -55,8 +57,8 @@ public class TestCephConfig {
   @Bean
   @Primary
   @ConditionalOnProperty(prefix = "storage.form-data", name = "type", havingValue = "test-ceph")
-  public FormDataStorageService formDataStorageService(FormDataRepository formDataRepository) {
-    return FormDataStorageService.builder()
+  public FormDataStorageService<?> formDataStorageService(FormDataRepository<CephKeysSearchParams> formDataRepository) {
+    return CephFormDataStorageService.builder()
         .keyProvider(new FormDataKeyProviderImpl())
         .repository(formDataRepository)
         .build();
