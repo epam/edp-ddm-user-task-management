@@ -37,7 +37,6 @@ service:
 appConfigMountPath: "/app/config"
 readinessPath: "/user-task-management/actuator/health/readiness"
 livenessPath: "/user-task-management/actuator/health/liveness"
-redisSecretsMountPath: "/app/secrets/redis"
 
 prometheus:
   endpoints:
@@ -54,13 +53,14 @@ storage:
     type: redis
   backend:
     redis:
+      username: ${REDIS_USERNAME}
       password: ${REDIS_PASSWORD}
       sentinel:
         master: mymaster
         nodes: ${redis.endpoint}
 
 redis:
-  secretName: redis-auth
+  secretName: redis-user-task-management-user-secret
 
 
 monitoring:
